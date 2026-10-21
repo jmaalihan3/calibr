@@ -230,13 +230,14 @@ def create_exam(question_ids: List[int]) -> int:
         return cursor.lastrowid
 
 
-def save_exam_answers(exam_id: int, answers: Dict[int, int]):
+def save_exam_answers(exam_id: int, answers: Dict[int, int], confidence: Dict[int, int] = None):
     """
-    Save user answers for an exam.
+    Save user answers and confidence ratings for an exam.
     
     Args:
         exam_id: The exam instance ID
         answers: Dictionary mapping question_id -> user_answer_index
+        confidence: Dictionary mapping question_id -> confidence (1=Confident, 0=Not Confident)
     
     Side effects:
         Inserts rows in exam_answers table (one per question)
@@ -248,15 +249,16 @@ def save_exam_answers(exam_id: int, answers: Dict[int, int]):
     with get_db() as conn:
         cursor = conn.cursor()
         for question_id, user_answer in answers.items():
+            conf_value = confidence.get(question_id) if confidence else None
             cursor.execute(
-                "INSERT INTO exam_answers (exam_id, question_id, user_answer) VALUES (?, ?, ?)",
-                (exam_id, question_id, user_answer)
+                "INSERT INTO exam_answers (exam_id, question_id, user_answer, confidence) VALUES (?, ?, ?, ?)",
+                (exam_id, question_id, user_answer, conf_value)
             )
 
 
 def get_exam_with_answers(exam_id: int) -> Optional[Dict]:
     """
-    Retrieve exam details including user answers and correct answers.
+    Retrieve exam details including user answers, confidence, and correct answers.
     
     Args:
         exam_id: The exam instance ID
@@ -266,6 +268,7 @@ def get_exam_with_answers(exam_id: int) -> Optional[Dict]:
         - exam_id: The exam ID
         - questions: Dict of question_id -> {question_text, options, correct_answer}
         - user_answers: Dict of question_id -> user_answer_index
+        - user_confidence: Dict of question_id -> confidence (1=Confident, 0=Not Confident)
         - score: Final score (may be None if not yet submitted)
         - completed_at: Completion timestamp (may be None)
         
@@ -291,7 +294,7 @@ def get_exam_with_answers(exam_id: int) -> Optional[Dict]:
         # Using parameterized query to avoid SQL injection
         placeholders = ",".join("?" * len(question_ids))
         cursor.execute(
-            f"SELECT id, question_text, options, correct_answer FROM questions WHERE id IN ({placeholders})",
+            f"SELECT id, question_text, options, correct_answer, unit, unit_name FROM questions WHERE id IN ({placeholders})",
             question_ids
         )
         question_rows = cursor.fetchall()
@@ -301,24 +304,29 @@ def get_exam_with_answers(exam_id: int) -> Optional[Dict]:
             questions[row["id"]] = {
                 "question_text": row["question_text"],
                 "options": json.loads(row["options"]),
-                "correct_answer": row["correct_answer"]
+                "correct_answer": row["correct_answer"],
+                "unit": row["unit"],
+                "unit_name": row["unit_name"]
             }
         
-        # Get user answers
+        # Get user answers and confidence
         cursor.execute(
-            "SELECT question_id, user_answer FROM exam_answers WHERE exam_id = ?",
+            "SELECT question_id, user_answer, confidence FROM exam_answers WHERE exam_id = ?",
             (exam_id,)
         )
         answer_rows = cursor.fetchall()
         
         user_answers = {}
+        user_confidence = {}
         for row in answer_rows:
             user_answers[row["question_id"]] = row["user_answer"]
+            user_confidence[row["question_id"]] = row["confidence"]
         
         return {
             "exam_id": exam_id,
             "questions": questions,
             "user_answers": user_answers,
+            "user_confidence": user_confidence,
             "score": exam_row["score"],
             "completed_at": exam_row["completed_at"]
         }

@@ -35,10 +35,14 @@ class SubmitExamRequest(BaseModel):
     Fields:
         answers: Dictionary mapping question_id (as string) to answer index
                  Example: {"5": 1, "7": 2, "3": 0}
+        confidence: Dictionary mapping question_id (as string) to confidence
+                    1 = Confident, 0 = Not Confident
+                    Example: {"5": 1, "7": 0, "3": 1}
     
     Note: JSON object keys are always strings, converted to int in services layer
     """
     answers: Dict[str, int]
+    confidence: Dict[str, int] = None
 
 
 @router.post("/start")
@@ -91,6 +95,11 @@ async def submit_exam(exam_id: int, request: SubmitExamRequest):
                 "5": 1,  // question_id: answer_index
                 "7": 2,
                 "3": 0
+            },
+            "confidence": {
+                "5": 1,  // question_id: confidence (1=Confident, 0=Not Confident)
+                "7": 0,
+                "3": 1
             }
         }
     
@@ -99,6 +108,7 @@ async def submit_exam(exam_id: int, request: SubmitExamRequest):
             "score": 3,
             "total": 5,
             "percentage": 60.0,
+            "brier_score": 0.4,
             "results": [
                 {
                     "question_id": 5,
@@ -106,7 +116,9 @@ async def submit_exam(exam_id: int, request: SubmitExamRequest):
                     "options": ["3", "4", "5", "6"],
                     "user_answer": 1,
                     "correct_answer": 1,
-                    "is_correct": true
+                    "is_correct": true,
+                    "confidence": 1,
+                    "calibrated": true
                 },
                 ...
             ]
@@ -119,7 +131,7 @@ async def submit_exam(exam_id: int, request: SubmitExamRequest):
         500: Server error
     """
     try:
-        result = services.submit_exam(exam_id, request.answers)
+        result = services.submit_exam(exam_id, request.answers, request.confidence)
         return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

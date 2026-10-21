@@ -66,6 +66,33 @@
         </section>
     </div>
 
+    <!-- Confidence Modal: Appears after each answer -->
+    <div id="confidence-modal" class="modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <p id="confidence-selected-answer">You selected: <strong></strong></p>
+            </div>
+            
+            <div class="modal-body">
+                <h3>Are you confident in your answer?</h3>
+                
+                <div class="confidence-buttons">
+                    <button id="confident-btn" class="btn btn-confidence btn-confident">
+                        Confident
+                    </button>
+                    <button id="not-confident-btn" class="btn btn-confidence btn-not-confident">
+                        Not Confident
+                    </button>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <p id="confidence-progress" class="text-muted"></p>
+            </div>
+        </div>
+    </div>
+
     <script src="/app.js"></script>
 </body>
 </html>

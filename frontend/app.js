@@ -16,7 +16,9 @@ const state = {
     examId: null,               // Current exam ID from backend
     questions: [],              // Array of question objects
     currentQuestionIndex: 0,    // Index of current question (0-based)
-    userAnswers: {}             // Map of questionId -> answerIndex
+    userAnswers: {},            // Map of questionId -> answerIndex
+    userConfidence: {},         // Map of questionId -> confidence (1=Confident, 0=Not Confident)
+    pendingConfidence: false    // Whether waiting for confidence input
 };
 
 // API base URL
@@ -37,6 +39,13 @@ function init() {
     
     // Results section: New exam button
     document.getElementById('new-exam-btn').addEventListener('click', resetToHome);
+    
+    // Confidence modal: Confidence buttons
+    document.getElementById('confident-btn').addEventListener('click', () => handleConfidence(1));
+    document.getElementById('not-confident-btn').addEventListener('click', () => handleConfidence(0));
+    
+    // Keyboard shortcuts for confidence modal (C = Confident, N = Not Confident)
+    document.addEventListener('keydown', handleKeyboardShortcut);
     
     console.log('Application initialized');
 }
@@ -88,6 +97,8 @@ async function startExam() {
         state.questions = data.questions;
         state.currentQuestionIndex = 0;
         state.userAnswers = {};
+        state.userConfidence = {};
+        state.pendingConfidence = false;
         
         // Show first question
         showSection('exam-section');
@@ -176,6 +187,7 @@ function renderQuestion() {
 /**
  * Handle option selection.
  * Updates visual state and saves answer.
+ * If confidence not yet recorded, shows confidence modal.
  * 
  * @param {number} optionIndex - Index of selected option (0-3)
  */
@@ -194,12 +206,17 @@ function selectOption(optionIndex) {
             opt.classList.remove('selected');
         }
     });
+    
+    // Show confidence modal if not already answered
+    if (state.userConfidence[question.id] === undefined) {
+        showConfidenceModal(optionIndex);
+    }
 }
 
 
 /**
  * Navigate to the next question.
- * Validates that an answer is selected.
+ * Validates that an answer and confidence are selected.
  */
 function nextQuestion() {
     const question = state.questions[state.currentQuestionIndex];
@@ -207,6 +224,12 @@ function nextQuestion() {
     // Validate that an answer is selected
     if (state.userAnswers[question.id] === undefined) {
         showError('Please select an answer before continuing.');
+        return;
+    }
+    
+    // Validate that confidence is recorded
+    if (state.userConfidence[question.id] === undefined) {
+        showError('Please indicate your confidence level before continuing.');
         return;
     }
     
@@ -228,6 +251,12 @@ async function submitExam() {
         return;
     }
     
+    // Validate that confidence is recorded
+    if (state.userConfidence[question.id] === undefined) {
+        showError('Please indicate your confidence level before submitting.');
+        return;
+    }
+    
     const submitBtn = document.getElementById('submit-btn');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
@@ -235,8 +264,12 @@ async function submitExam() {
     try {
         // Convert numeric keys to strings for JSON
         const answersForAPI = {};
+        const confidenceForAPI = {};
         for (const [qId, answerIdx] of Object.entries(state.userAnswers)) {
             answersForAPI[qId.toString()] = answerIdx;
+        }
+        for (const [qId, conf] of Object.entries(state.userConfidence)) {
+            confidenceForAPI[qId.toString()] = conf;
         }
         
         // Call API to submit exam
@@ -245,7 +278,10 @@ async function submitExam() {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ answers: answersForAPI })
+            body: JSON.stringify({ 
+                answers: answersForAPI,
+                confidence: confidenceForAPI 
+            })
         });
         
         if (!response.ok) {
@@ -270,27 +306,59 @@ async function submitExam() {
 /**
  * Render exam results in the results section.
  * Groups questions by unit for better organization.
+ * Displays Brier Score and calibration indicators.
  * 
  * @param {Object} data - Results data from API
  * @param {number} data.score - Number of correct answers
  * @param {number} data.total - Total number of questions
  * @param {number} data.percentage - Score percentage
+ * @param {number} data.brier_score - Calibration metric (0=perfect, 1=worst)
  * @param {Array} data.results - Array of result objects
  */
 function renderResults(data) {
-    // Render score summary
+    // Render score summary with Brier Score
     const scoreSummary = document.getElementById('score-summary');
+    
+    let brierScoreHTML = '';
+    if (data.brier_score !== null && data.brier_score !== undefined) {
+        // Determine calibration quality
+        let calibrationLabel = '';
+        let calibrationColor = '';
+        if (data.brier_score <= 0.20) {
+            calibrationLabel = 'Excellent calibration ✓';
+            calibrationColor = '#28a745';
+        } else if (data.brier_score <= 0.40) {
+            calibrationLabel = 'Good calibration ✓';
+            calibrationColor = '#4a9eff';
+        } else if (data.brier_score <= 0.60) {
+            calibrationLabel = 'Poor calibration';
+            calibrationColor = '#ff9800';
+        } else {
+            calibrationLabel = 'Very poor calibration';
+            calibrationColor = '#ff4444';
+        }
+        
+        brierScoreHTML = `
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #3a3a3a;">
+                <div style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">Calibration Score (Brier)</div>
+                <div style="font-size: 2rem; font-weight: bold; color: #4a9eff;">${data.brier_score.toFixed(3)}</div>
+                <div style="font-size: 1rem; color: ${calibrationColor}; margin-top: 5px;">${calibrationLabel}</div>
+            </div>
+        `;
+    }
+    
     scoreSummary.innerHTML = `
         <div class="score">${data.score} / ${data.total}</div>
         <div class="percentage">${data.percentage}%</div>
+        ${brierScoreHTML}
     `;
     
     // Group results by unit
     const resultsByUnit = {};
     data.results.forEach((result, index) => {
         const question = state.questions.find(q => q.id === result.question_id);
-        const unit = question && question.unit ? question.unit : 0;
-        const unitName = question && question.unit_name ? question.unit_name : 'Uncategorized';
+        const unit = result.unit || (question && question.unit) || 0;
+        const unitName = result.unit_name || (question && question.unit_name) || 'Uncategorized';
         
         if (!resultsByUnit[unit]) {
             resultsByUnit[unit] = {
@@ -334,6 +402,8 @@ function renderResults(data) {
                             <th>Question</th>
                             <th>Your Answer</th>
                             <th>Correct Answer</th>
+                            <th>Confidence</th>
+                            <th>Calibrated?</th>
                             <th>Result</th>
                         </tr>
                     </thead>
@@ -349,12 +419,40 @@ function renderResults(data) {
             const resultClass = result.is_correct ? 'result-correct' : 'result-incorrect';
             const resultIcon = result.is_correct ? '✓' : '✗';
             
+            // Confidence display
+            let confidenceText = 'N/A';
+            let confidenceColor = '#888';
+            if (result.confidence !== null && result.confidence !== undefined) {
+                if (result.confidence === 1) {
+                    confidenceText = '✓ Confident';
+                    confidenceColor = '#28a745';
+                } else {
+                    confidenceText = '✗ Not Confident';
+                    confidenceColor = '#ff4444';
+                }
+            }
+            
+            // Calibration display
+            let calibrationText = 'N/A';
+            let calibrationColor = '#888';
+            if (result.calibrated !== null && result.calibrated !== undefined) {
+                if (result.calibrated) {
+                    calibrationText = '✓ Match';
+                    calibrationColor = '#28a745';
+                } else {
+                    calibrationText = '✗ Mismatch';
+                    calibrationColor = '#ff4444';
+                }
+            }
+            
             htmlContent += `
                 <tr>
                     <td>${questionNum}</td>
                     <td>${result.question_text}</td>
                     <td>${userAnswer}</td>
                     <td>${correctAnswer}</td>
+                    <td style="color: ${confidenceColor};">${confidenceText}</td>
+                    <td style="color: ${calibrationColor};">${calibrationText}</td>
                     <td class="${resultClass}">
                         <span class="result-icon">${resultIcon}</span>
                         ${result.is_correct ? 'Correct' : 'Incorrect'}
@@ -383,6 +481,8 @@ function resetToHome() {
     state.questions = [];
     state.currentQuestionIndex = 0;
     state.userAnswers = {};
+    state.userConfidence = {};
+    state.pendingConfidence = false;
     
     // Reset start button
     const startBtn = document.getElementById('start-btn');
@@ -391,6 +491,80 @@ function resetToHome() {
     
     // Show home section
     showSection('home-section');
+}
+
+
+/**
+ * Show confidence modal after user selects an answer.
+ * 
+ * @param {number} selectedOptionIndex - Index of the selected answer
+ */
+function showConfidenceModal(selectedOptionIndex) {
+    const question = state.questions[state.currentQuestionIndex];
+    const selectedAnswer = question.options[selectedOptionIndex];
+    const questionNumber = state.currentQuestionIndex + 1;
+    const totalQuestions = state.questions.length;
+    const unitInfo = question.unit ? ` (Unit ${question.unit})` : '';
+    
+    // Update modal content
+    document.querySelector('#confidence-selected-answer strong').textContent = selectedAnswer;
+    document.getElementById('confidence-progress').textContent = 
+        `Question ${questionNumber} of ${totalQuestions}${unitInfo}`;
+    
+    // Show modal
+    document.getElementById('confidence-modal').style.display = 'block';
+    state.pendingConfidence = true;
+}
+
+
+/**
+ * Hide confidence modal.
+ */
+function hideConfidenceModal() {
+    document.getElementById('confidence-modal').style.display = 'none';
+    state.pendingConfidence = false;
+}
+
+
+/**
+ * Handle confidence selection (Confident or Not Confident).
+ * 
+ * @param {number} confidence - 1 for Confident, 0 for Not Confident
+ */
+function handleConfidence(confidence) {
+    const question = state.questions[state.currentQuestionIndex];
+    
+    // Save confidence to state
+    state.userConfidence[question.id] = confidence;
+    
+    // Hide modal
+    hideConfidenceModal();
+    
+    console.log(`Confidence recorded: ${confidence === 1 ? 'Confident' : 'Not Confident'}`);
+}
+
+
+/**
+ * Handle keyboard shortcuts.
+ * C = Confident, N = Not Confident (only when modal is open)
+ * 
+ * @param {KeyboardEvent} event - Keyboard event
+ */
+function handleKeyboardShortcut(event) {
+    // Only handle shortcuts when confidence modal is open
+    if (!state.pendingConfidence) {
+        return;
+    }
+    
+    const key = event.key.toLowerCase();
+    
+    if (key === 'c') {
+        event.preventDefault();
+        handleConfidence(1); // Confident
+    } else if (key === 'n') {
+        event.preventDefault();
+        handleConfidence(0); // Not Confident
+    }
 }
 
 
