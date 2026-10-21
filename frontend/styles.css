@@ -1,0 +1,332 @@
+/*
+ * Academic Assessment System - Dark Theme Styles
+ * 
+ * Design principles:
+ * - Dark background for reduced eye strain
+ * - High contrast for readability
+ * - Card-based layout for visual hierarchy
+ * - Responsive design for mobile devices
+ */
+
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+/* Container */
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+header {
+    text-align: center;
+    padding: 30px 0;
+    border-bottom: 2px solid #333;
+    margin-bottom: 40px;
+}
+
+header h1 {
+    color: #4a9eff;
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+/* Section visibility control */
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+/* Card layout */
+.card {
+    background-color: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.card h2 {
+    color: #4a9eff;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
+.card p {
+    margin-bottom: 15px;
+    color: #b0b0b0;
+}
+
+/* Buttons */
+.btn {
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 500;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-primary {
+    background-color: #4a9eff;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background-color: #3a8eef;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+/* Question display */
+#question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+#question-counter {
+    color: #888;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+#question-text {
+    font-size: 1.3rem;
+    color: #e0e0e0;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+/* Options container */
+#options-container {
+    margin-bottom: 30px;
+}
+
+.option {
+    background-color: #333;
+    border: 2px solid #444;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.option:hover {
+    border-color: #4a9eff;
+    background-color: #3a3a3a;
+}
+
+.option input[type="radio"] {
+    margin-right: 12px;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+.option label {
+    cursor: pointer;
+    flex: 1;
+    user-select: none;
+    color: #e0e0e0;
+}
+
+.option.selected {
+    border-color: #4a9eff;
+    background-color: #2a3a4a;
+}
+
+/* Exam actions */
+#exam-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* Error message */
+.error-message {
+    background-color: #ff4444;
+    color: #fff;
+    padding: 12px;
+    border-radius: 6px;
+    margin-top: 15px;
+    font-weight: 500;
+}
+
+/* Results display */
+#score-summary {
+    background-color: #333;
+    padding: 20px;
+    border-radius: 6px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+#score-summary .score {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #4a9eff;
+    margin-bottom: 10px;
+}
+
+#score-summary .percentage {
+    font-size: 1.5rem;
+    color: #888;
+}
+
+/* Results table */
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+}
+
+.results-table th,
+.results-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+.results-table th {
+    background-color: #333;
+    color: #4a9eff;
+    font-weight: 600;
+}
+
+.results-table tr:hover {
+    background-color: #2a2a2a;
+}
+
+.result-correct {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.result-incorrect {
+    color: #ff4444;
+    font-weight: 600;
+}
+
+.result-icon {
+    font-size: 1.2rem;
+    margin-right: 5px;
+}
+
+/* Results actions */
+#results-actions {
+    text-align: center;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    .container {
+        padding: 15px;
+    }
+
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    .card {
+        padding: 20px;
+    }
+
+    .card h2 {
+        font-size: 1.3rem;
+    }
+
+    #question-text {
+        font-size: 1.1rem;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+
+    #exam-actions {
+        flex-direction: column;
+    }
+
+    #exam-actions .btn {
+        width: 100%;
+    }
+
+    .results-table {
+        font-size: 0.9rem;
+    }
+
+    .results-table th,
+    .results-table td {
+        padding: 8px;
+    }
+}
+
+/* Loading indicator */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeIn 0.3s ease;
+}

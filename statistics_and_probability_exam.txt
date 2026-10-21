@@ -1,0 +1,187 @@
+STATISTICS & PROBABILITY EXAM
+Units 3, 8, 10, & 12
+
+======================================================================
+UNIT 3: SUMMARIZING QUANTITATIVE DATA
+======================================================================
+
+Question 1
+Which of the following measures of center and spread is most resistant (robust) to extreme outliers or skewed distributions?
+  A) Mean and standard deviation
+  B) Median and interquartile range (IQR)
+  C) Mean and range
+  D) Mode and variance
+
+Question 2
+If every data point in a quantitative dataset is multiplied by a constant c (where c > 0), what happens to the standard deviation of the dataset?
+  A) It remains unchanged.
+  B) It is multiplied by c.
+  C) It is multiplied by c^2.
+  D) It is increased by c.
+
+Question 3
+A dataset has a strongly right-skewed distribution. Which of the following relationships between the mean and median is most likely true?
+  A) Mean equals median
+  B) Mean is less than median
+  C) Mean is greater than median
+  D) The relationship cannot be determined
+
+Question 4
+Why do we divide by n - 1 instead of n when calculating the sample variance of a dataset?
+  A) To make the calculation mathematically easier for large datasets.
+  B) To provide an unbiased estimator of the population variance.
+  C) To account for the presence of outliers.
+  D) To adjust for categorical variables mixed into quantitative data.
+
+Question 5
+In a symmetric bell-shaped distribution, approximately what percentage of data falls within one standard deviation (mean +/- 1 std dev) of the mean?
+  A) 50%
+  B) 68%
+  C) 95%
+  D) 99.7%
+
+
+======================================================================
+UNIT 8: COUNTING, PERMUTATIONS, AND COMBINATIONS
+======================================================================
+
+Question 6
+A restaurant offers a lunch special consisting of 4 choices of appetizers, 5 choices of main courses, and 3 choices of desserts. How many different lunch specials can be created by selecting one appetizer, one main course, and one dessert?
+  A) 12
+  B) 27
+  C) 60
+  D) 120
+
+Question 7
+In how many different ways can a committee of 3 people be chosen from a group of 10 people?
+  A) 30
+  B) 120
+  C) 720
+  D) 5,040
+
+Question 8
+Five distinct books are to be arranged on a shelf left to right. How many different linear arrangements are possible?
+  A) 5
+  B) 25
+  C) 120
+  D) 720
+
+Question 9
+What is the primary conceptual difference between a permutation and a combination?
+  A) Permutations involve replacement, while combinations do not.
+  B) Permutations are used for categorical data, while combinations are used for quantitative data.
+  C) Order matters in permutations, whereas order does not matter in combinations.
+  D) Combinations can only be used when sample sizes are less than 10.
+
+Question 10
+A club has 6 men and 4 women. They wish to form a subcommittee of 2 men and 2 women. How many combinations are possible?
+  A) 15
+  B) 36
+  C) 90
+  D) 210
+
+
+======================================================================
+UNIT 10: SAMPLING DISTRIBUTIONS
+======================================================================
+
+Question 11
+What does the Central Limit Theorem state about the sampling distribution of the sample mean when the sample size n is sufficiently large (typically n >= 30)?
+  A) The population distribution becomes normal.
+  B) The sampling distribution of the sample mean becomes approximately normal, regardless of the population's underlying shape.
+  C) The standard deviation of the sample mean increases as n increases.
+  D) The sample mean will always equal the exact population mean.
+
+Question 12
+As the sample size n increases, what happens to the standard deviation of the sampling distribution of the sample mean (standard error)?
+  A) It increases.
+  B) It stays the same.
+  C) It decreases.
+  D) It approaches the population mean.
+
+Question 13
+Which of the following conditions must be met to use the Normal approximation for the sampling distribution of a sample proportion (p-hat)?
+  A) n >= 30 only
+  B) n*p >= 10 and n*(1-p) >= 10
+  C) The population must be perfectly normally distributed.
+  D) The sample must be selected using systematic sampling.
+
+Question 14
+An estimator is said to be unbiased if:
+  A) Its standard error is equal to zero.
+  B) The mean of its sampling distribution equals the true value of the population parameter being estimated.
+  C) It is calculated using a simple random sample without replacement.
+  D) It always produces the exact same value across repeated samples.
+
+Question 15
+If a population has a standard deviation of sigma = 15, and a researcher takes random samples of size n = 25, what is the standard error of the sample mean?
+  A) 0.6
+  B) 3.0
+  C) 5.0
+  D) 15.0
+
+
+======================================================================
+UNIT 12: SIGNIFICANCE TESTS (HYPOTHESIS TESTING)
+======================================================================
+
+Question 16
+In hypothesis testing, what does the null hypothesis (H0) typically represent?
+  A) The claim that the researcher hopes to prove true.
+  B) A statement of "no difference," "no effect," or status quo.
+  C) Always a directional (one-tailed) inequality statement.
+  D) The probability of making a Type II error.
+
+Question 17
+What is a Type I error in significance testing?
+  A) Rejecting a null hypothesis when it is actually true.
+  B) Failing to reject a null hypothesis when it is actually true.
+  C) Rejecting a null hypothesis when it is actually false.
+  D) Failing to reject a null hypothesis when a better alternative exists.
+
+Question 18
+If a calculated P-value for a two-tailed test is 0.03 and the chosen significance level is alpha = 0.05, what is the appropriate conclusion?
+  A) Fail to reject H0; there is sufficient evidence of an effect.
+  B) Reject H0; there is statistically significant evidence against the null hypothesis.
+  C) Accept H0 as absolute truth.
+  D) Redo the experiment because the P-value is too close to alpha.
+
+Question 19
+What does the P-value measure in a hypothesis test?
+  A) The probability that the alternative hypothesis is true.
+  B) The probability that the null hypothesis is true.
+  C) The probability of observing results as extreme as (or more extreme than) those observed, assuming the null hypothesis is true.
+  D) The fixed risk of committing a Type I error set by the researcher prior to the test.
+
+Question 20
+When should a researcher choose a one-tailed (one-sided) significance test instead of a two-tailed test?
+  A) When sample sizes are smaller than 30.
+  B) When previous research or theory strongly suggests the population parameter only increases or only decreases relative to the null value.
+  C) Whenever they want to reduce the probability of a Type I error to zero.
+  D) When the data distribution is heavily skewed.
+
+
+======================================================================
+ANSWER KEY
+======================================================================
+
+ 1. B) Median and interquartile range (IQR)
+ 2. B) It is multiplied by c.
+ 3. C) Mean is greater than median
+ 4. B) To provide an unbiased estimator of the population variance.
+ 5. B) 68%
+ 6. C) 60
+ 7. B) 120  [Calculation: C(10,3) = (10 * 9 * 8) / (3 * 2 * 1) = 120]
+ 8. C) 120  [Calculation: 5! = 5 * 4 * 3 * 2 * 1 = 120]
+ 9. C) Order matters in permutations, whereas order does not matter in combinations.
+10. C) 90   [Calculation: C(6,2) * C(4,2) = 15 * 6 = 90]
+11. B) The sampling distribution of the sample mean becomes approximately normal, regardless of the population's underlying shape.
+12. C) It decreases. [Formula: SE = sigma / sqrt(n)]
+13. B) n*p >= 10 and n*(1-p) >= 10
+14. B) The mean of its sampling distribution equals the true value of the population parameter being estimated.
+15. B) 3.0  [Calculation: 15 / sqrt(25) = 15 / 5 = 3.0]
+16. B) A statement of "no difference," "no effect," or status quo.
+17. A) Rejecting a null hypothesis when it is actually true.
+18. B) Reject H0; there is statistically significant evidence against the null hypothesis.
+19. C) The probability of observing results as extreme as (or more extreme than) those observed, assuming the null hypothesis is true.
+20. B) When previous research or theory strongly suggests the population parameter only increases or only decreases relative to the null value.

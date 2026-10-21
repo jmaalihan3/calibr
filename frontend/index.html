@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Assessment</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Academic Assessment System</h1>
+        </header>
+
+        <!-- Home Section: Landing page with start button -->
+        <section id="home-section" class="section active">
+            <div class="card">
+                <h2>Welcome to the Assessment</h2>
+                <p>Test your knowledge with a randomly generated exam.</p>
+                <p>You will be asked 5 multiple choice questions.</p>
+                <button id="start-btn" class="btn btn-primary">Start Exam</button>
+            </div>
+        </section>
+
+        <!-- Exam Section: Question display and answer selection -->
+        <section id="exam-section" class="section">
+            <div class="card">
+                <div id="question-header">
+                    <span id="question-counter">Question 1 of 5</span>
+                </div>
+                
+                <div id="question-content">
+                    <h2 id="question-text">Loading question...</h2>
+                    
+                    <div id="options-container">
+                        <!-- Radio button options will be inserted here by JavaScript -->
+                    </div>
+                </div>
+
+                <div id="exam-actions">
+                    <button id="next-btn" class="btn btn-primary">Next Question</button>
+                    <button id="submit-btn" class="btn btn-success" style="display: none;">Submit Exam</button>
+                </div>
+
+                <div id="error-message" class="error-message" style="display: none;"></div>
+            </div>
+        </section>
+
+        <!-- Results Section: Score and answer review -->
+        <section id="results-section" class="section">
+            <div class="card">
+                <h2>Exam Results</h2>
+                
+                <div id="score-summary">
+                    <!-- Score will be inserted here -->
+                </div>
+
+                <div id="results-details">
+                    <!-- Detailed results table will be inserted here -->
+                </div>
+
+                <div id="results-actions">
+                    <button id="new-exam-btn" class="btn btn-primary">Take Another Exam</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>
