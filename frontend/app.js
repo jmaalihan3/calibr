@@ -104,16 +104,17 @@ async function startExam() {
 
 /**
  * Render the current question in the exam section.
- * Updates question text, options, and counter.
+ * Updates question text, options, counter, and unit information.
  */
 function renderQuestion() {
     const question = state.questions[state.currentQuestionIndex];
     const totalQuestions = state.questions.length;
     const questionNumber = state.currentQuestionIndex + 1;
     
-    // Update question counter
+    // Update question counter with unit information
+    const unitInfo = question.unit ? ` (Unit ${question.unit})` : '';
     document.getElementById('question-counter').textContent = 
-        `Question ${questionNumber} of ${totalQuestions}`;
+        `Question ${questionNumber} of ${totalQuestions}${unitInfo}`;
     
     // Update question text
     document.getElementById('question-text').textContent = question.question_text;
@@ -268,6 +269,7 @@ async function submitExam() {
 
 /**
  * Render exam results in the results section.
+ * Groups questions by unit for better organization.
  * 
  * @param {Object} data - Results data from API
  * @param {number} data.score - Number of correct answers
@@ -283,52 +285,92 @@ function renderResults(data) {
         <div class="percentage">${data.percentage}%</div>
     `;
     
-    // Render detailed results table
-    const resultsDetails = document.getElementById('results-details');
-    
-    let tableHTML = `
-        <table class="results-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Question</th>
-                    <th>Your Answer</th>
-                    <th>Correct Answer</th>
-                    <th>Result</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-    
+    // Group results by unit
+    const resultsByUnit = {};
     data.results.forEach((result, index) => {
-        const questionNum = index + 1;
-        const userAnswer = result.user_answer !== null 
-            ? result.options[result.user_answer] 
-            : 'Not answered';
-        const correctAnswer = result.options[result.correct_answer];
-        const resultClass = result.is_correct ? 'result-correct' : 'result-incorrect';
-        const resultIcon = result.is_correct ? '✓' : '✗';
+        const question = state.questions.find(q => q.id === result.question_id);
+        const unit = question && question.unit ? question.unit : 0;
+        const unitName = question && question.unit_name ? question.unit_name : 'Uncategorized';
         
-        tableHTML += `
-            <tr>
-                <td>${questionNum}</td>
-                <td>${result.question_text}</td>
-                <td>${userAnswer}</td>
-                <td>${correctAnswer}</td>
-                <td class="${resultClass}">
-                    <span class="result-icon">${resultIcon}</span>
-                    ${result.is_correct ? 'Correct' : 'Incorrect'}
-                </td>
-            </tr>
+        if (!resultsByUnit[unit]) {
+            resultsByUnit[unit] = {
+                unitName: unitName,
+                results: []
+            };
+        }
+        
+        resultsByUnit[unit].results.push({
+            ...result,
+            originalIndex: index,
+            unit: unit,
+            unitName: unitName
+        });
+    });
+    
+    // Sort units by number
+    const sortedUnits = Object.keys(resultsByUnit).sort((a, b) => parseInt(a) - parseInt(b));
+    
+    // Render results grouped by unit
+    const resultsDetails = document.getElementById('results-details');
+    let htmlContent = '';
+    
+    sortedUnits.forEach(unit => {
+        const unitData = resultsByUnit[unit];
+        const unitResults = unitData.results;
+        const unitCorrect = unitResults.filter(r => r.is_correct).length;
+        const unitTotal = unitResults.length;
+        
+        htmlContent += `
+            <div class="unit-section">
+                <div class="unit-header">
+                    <h3>Unit ${unit}: ${unitData.unitName}</h3>
+                    <span class="unit-score">${unitCorrect} / ${unitTotal} correct</span>
+                </div>
+                
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Question</th>
+                            <th>Your Answer</th>
+                            <th>Correct Answer</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        unitResults.forEach((result) => {
+            const questionNum = result.originalIndex + 1;
+            const userAnswer = result.user_answer !== null 
+                ? result.options[result.user_answer] 
+                : 'Not answered';
+            const correctAnswer = result.options[result.correct_answer];
+            const resultClass = result.is_correct ? 'result-correct' : 'result-incorrect';
+            const resultIcon = result.is_correct ? '✓' : '✗';
+            
+            htmlContent += `
+                <tr>
+                    <td>${questionNum}</td>
+                    <td>${result.question_text}</td>
+                    <td>${userAnswer}</td>
+                    <td>${correctAnswer}</td>
+                    <td class="${resultClass}">
+                        <span class="result-icon">${resultIcon}</span>
+                        ${result.is_correct ? 'Correct' : 'Incorrect'}
+                    </td>
+                </tr>
+            `;
+        });
+        
+        htmlContent += `
+                    </tbody>
+                </table>
+            </div>
         `;
     });
     
-    tableHTML += `
-            </tbody>
-        </table>
-    `;
-    
-    resultsDetails.innerHTML = tableHTML;
+    resultsDetails.innerHTML = htmlContent;
 }
 
 

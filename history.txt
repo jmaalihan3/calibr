@@ -306,3 +306,215 @@ Prototype 1 successfully implements a working academic assessment system with:
 The prototype is ready for local testing and demonstrates core functionality. Architecture supports future enhancements like authentication, admin panels, and mobile apps without major refactoring.
 
 **Recommendation**: Test with sample users, gather feedback, then decide whether to enhance Prototype 1 or compare against Prototype 2 (SSR approach).
+
+## 2026-10-21 05:37 AM - Add Unit Categorization and Enhanced Results Display
+
+### User Prompts
+1. "Use statistics_and_probability_exam.txt for sample test"
+2. "Exam formatting issues. Refer to notes.MD for formatting issues"
+3. "In the original sample text file, there are unit headers categorizing each question. When storing questions, they should be marked by unit. Example: Question 1 belongs to Unit 3."
+4. "Exam results should show questions divided by unit"
+
+### Changes Made
+
+#### Database Schema Enhancement
+- Added `unit` (INTEGER) and `unit_name` (TEXT) columns to questions table
+- Migration code added to handle existing databases gracefully (ALTER TABLE with exception handling)
+- All 20 questions now categorized into 4 units:
+  * Unit 3: SUMMARIZING QUANTITATIVE DATA (5 questions, IDs 111-115)
+  * Unit 8: COUNTING, PERMUTATIONS, AND COMBINATIONS (5 questions, IDs 116-120)
+  * Unit 10: SAMPLING DISTRIBUTIONS (5 questions, IDs 121-125)
+  * Unit 12: SIGNIFICANCE TESTS (5 questions, IDs 126-130)
+
+#### Parser Enhancement (load_statistics_exam.py)
+- Completely refactored to track unit context while parsing
+- Now extracts unit headers (pattern: "UNIT N: NAME") and associates with subsequent questions
+- Separated question parsing into dedicated `parse_question_block()` function
+- Fixed issue where unit separator lines (===) were being appended to questions
+- Better handling of line numbers and Windows line endings
+
+#### API Layer (app/db.py)
+- Updated `get_random_questions()` to include unit and unit_name fields
+- Questions returned by API now contain full unit context
+- Maintains backward compatibility (unit fields can be NULL)
+
+#### Frontend Improvements
+**Question Display (app.js)**
+- Question counter now shows unit: "Question 3 of 5 (Unit 10)"
+- Provides context for which topic is being tested
+
+**Results Display (app.js)**
+- Major redesign: Groups results by unit instead of flat list
+- Dynamically creates separate sections for each unit
+- Each unit section includes:
+  * Header with unit number and name
+  * Unit-level score (e.g., "2/3 correct")
+  * Dedicated results table for that unit's questions
+- Question numbers preserved from original exam order
+- Results sorted by unit number for consistent presentation
+
+**Styling (styles.css)**
+- Added `.unit-section` for unit grouping containers
+- Added `.unit-header` with blue accent (#4a9eff) and flexbox layout
+- Added `.unit-score` for per-unit score display
+- Enhanced responsive design for mobile (stacked headers on small screens)
+- Improved table styling with consistent backgrounds
+
+**Test Page (test-formatting.html)**
+- Now displays unit information above each question
+- Shows all 20 questions for comprehensive review
+
+### Design Decisions
+
+#### Decision 1: Database Schema - Add Columns vs Separate Table
+**Chosen**: Add `unit` and `unit_name` columns directly to questions table
+
+**Pros:**
+- Simpler queries (no JOIN needed)
+- Better performance for typical queries (get questions with unit info)
+- Easy to filter by unit with WHERE clause
+- Intuitive data structure (unit info lives with question)
+
+**Cons:**
+- Denormalized (unit_name repeated for each question in same unit)
+- ~40 extra bytes per question (minimal: 20 questions × 40 bytes = 800 bytes)
+- If unit names change, need to update multiple rows
+
+**Alternative**: Separate units table with foreign key
+- Would be more normalized (unit info in one place)
+- More complex queries (always need JOIN)
+- Overkill for 4 static units
+
+**Rationale**: For this use case with only 4 units and 20 questions, denormalization is acceptable. Query simplicity and performance outweigh normalization benefits. Unit names are stable academic standards unlikely to change.
+
+#### Decision 2: Results Grouping - Client-Side vs Server-Side
+**Chosen**: Client-side grouping in JavaScript
+
+**Pros:**
+- Keeps API simple and generic
+- Flexible presentation without API changes
+- Reduces server processing
+- Better separation of concerns (API returns data, UI handles presentation)
+
+**Cons:**
+- More JavaScript code complexity
+- Client must do grouping work
+- Could be harder to cache grouped results
+
+**Alternative**: Server-side grouping with dedicated endpoint
+- Could create `/api/exams/{id}/results/by-unit` endpoint
+- Would return pre-grouped data structure
+- Less client-side logic
+
+**Rationale**: With only 5 questions per exam, client-side grouping is trivial. Keeping API simple and presentation-agnostic is better long-term design. Future features (different groupings, filtering) can be implemented client-side without API changes.
+
+#### Decision 3: Unit Display in Results - Separate Tables vs Single Table
+**Chosen**: Separate table for each unit
+
+**Pros:**
+- Clear visual separation between topics
+- Easy to scan specific unit performance
+- Natural grouping matches mental model (units as distinct topics)
+- Per-unit scores immediately visible
+- Scales well if units have many questions
+
+**Cons:**
+- More DOM elements (more tables)
+- Slightly more complex to render
+- Can't easily sort across all questions
+
+**Alternative**: Single table with unit column
+- Simpler to implement (one table render)
+- Easy to sort by any column
+- But loses visual unit separation
+
+**Rationale**: Educational context demands clear topic separation. Students need to identify strengths/weaknesses by unit. Visual grouping matches how courses are structured. Single-table view would make it harder to see "I got 2/2 on Unit 3 but 0/2 on Unit 12."
+
+#### Decision 4: Question Numbering in Grouped Results
+**Chosen**: Preserve original exam order numbering (1-5)
+
+**Pros:**
+- Consistent with exam-taking experience
+- Easy to reference ("I got question 3 wrong")
+- Matches student's mental model
+
+**Cons:**
+- Numbers not sequential within each unit (e.g., Unit 8 might have questions 2 and 5)
+- Could be confusing without context
+
+**Alternative**: Renumber within each unit (1, 2, 3...)
+- Sequential within groups
+- But loses connection to exam order
+
+**Rationale**: During exam review, students think "I wasn't sure about question 3" not "I wasn't sure about the second Unit 12 question." Preserving exam order numbering maintains continuity between exam-taking and review.
+
+### Potential Issues & Mitigations
+
+**Issue 1: Mixed Unit Exam Navigation**
+- Risk: With random question selection, user might jump between units frequently
+- Impact: Could be disorienting during exam (rapid context switching)
+- Current mitigation: Question counter shows unit for each question
+- Future mitigation: Could add option to group by unit during exam (all Unit 3 questions, then all Unit 8, etc.)
+
+**Issue 2: Unbalanced Unit Representation**
+- Risk: Random selection might give 4 questions from one unit, 1 from another
+- Impact: Unit-level scores less meaningful with small samples
+- Current mitigation: None (accepts random distribution)
+- Future mitigation: Could implement stratified sampling (e.g., 1-2 questions per unit)
+
+**Issue 3: Database Migration**
+- Risk: Existing databases won't have unit columns
+- Impact: Questions would have NULL unit values
+- Current mitigation: ALTER TABLE with try/except handles migration gracefully
+- Note: Must run load_statistics_exam.py to populate unit data
+
+**Issue 4: Unit Names in Multiple Languages**
+- Risk: If supporting multiple languages, unit names would need translation
+- Impact: Database structure doesn't support internationalization
+- Current mitigation: None (English only)
+- Future mitigation: Store unit_key (e.g., "unit_3_stats") and translate in frontend
+
+**Issue 5: Result Table Width on Mobile**
+- Risk: Tables with 5 columns may be too wide for small screens
+- Impact: Horizontal scrolling needed
+- Current mitigation: Responsive CSS adjusts padding/font-size
+- Future mitigation: Could switch to card layout on mobile (stack cells vertically)
+
+### Testing Verification
+
+**Database:**
+```sql
+-- Verified schema
+sqlite> .schema questions
+-- Shows unit and unit_name columns
+
+-- Verified data
+sqlite> SELECT unit, COUNT(*) FROM questions GROUP BY unit;
+-- Returns: 4 units with 5 questions each
+```
+
+**API:**
+```bash
+curl /api/exams/start
+# Returns questions with unit: 3, unit_name: "SUMMARIZING..."
+```
+
+**Frontend:**
+- Question counter: "Question 3 of 5 (Unit 10)" ✓
+- Results grouped by unit with headers ✓
+- Per-unit scores displayed ✓
+- Question numbers preserved ✓
+
+### Conclusion
+
+Unit categorization successfully implemented across all layers:
+- Database stores unit metadata for each question
+- Parser extracts unit information from source file
+- API includes unit context in responses
+- Frontend displays units in question counter and groups results by unit
+
+The changes maintain backward compatibility (NULL units acceptable) while providing valuable new functionality. Results display is significantly improved with clear topic-based organization, making it easy for users to identify strengths and weaknesses by academic unit.
+
+**Impact**: Users can now see performance breakdown by topic (e.g., "I got 100% on Sampling Distributions but only 50% on Hypothesis Testing"). This supports targeted study and better learning outcomes.
+
+**Future Enhancement**: Could add unit-specific analytics, unit filtering in exam generation, or unit-based progress tracking over multiple exams.

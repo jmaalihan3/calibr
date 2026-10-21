@@ -178,7 +178,7 @@ def get_random_questions(count: int = 5) -> List[Dict]:
         count: Number of questions to retrieve (default 5)
     
     Returns:
-        List of question dictionaries with id, question_text, and options.
+        List of question dictionaries with id, question_text, options, unit info.
         Does NOT include correct_answer (security: revealed only after submission).
     
     Used by: services.py start_exam()
@@ -188,7 +188,7 @@ def get_random_questions(count: int = 5) -> List[Dict]:
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT id, question_text, options FROM questions ORDER BY RANDOM() LIMIT ?",
+            "SELECT id, question_text, options, unit, unit_name FROM questions ORDER BY RANDOM() LIMIT ?",
             (count,)
         )
         rows = cursor.fetchall()
@@ -198,7 +198,9 @@ def get_random_questions(count: int = 5) -> List[Dict]:
             questions.append({
                 "id": row["id"],
                 "question_text": row["question_text"],
-                "options": json.loads(row["options"])
+                "options": json.loads(row["options"]),
+                "unit": row["unit"],
+                "unit_name": row["unit_name"]
             })
         
         return questions
