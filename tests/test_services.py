@@ -53,6 +53,7 @@ def mock_exam_data():
             }
         },
         "user_answers": {1: 1, 2: 2},
+        "user_confidence": {1: 1, 2: 0},
         "score": None,
         "completed_at": None
     }
@@ -106,7 +107,7 @@ def test_submit_exam_all_correct(mock_db, mock_exam_data):
         assert 'correct_answer' in res
     
     # Verify database calls
-    mock_db.save_exam_answers.assert_called_once_with(1, {1: 1, 2: 2})
+    mock_db.save_exam_answers.assert_called_once_with(1, {1: 1, 2: 2}, None)
     mock_db.update_exam_score.assert_called_once_with(1, 2)
 
 

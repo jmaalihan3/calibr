@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Test script for calibration feature.
-Tests the complete flow: start exam -> submit with confidence -> verify Brier Score calculation.
+Tests the complete flow: start exam -> submit with confidence -> verify Brier Score and Bias Score calculation.
 """
 
 import requests
@@ -136,16 +136,56 @@ def test_calibration_flow():
     
     print("   ✓ Brier Score calculation verified!")
     
-    # Step 7: Test retrieval of results
-    print("\n7. Testing results retrieval...")
+    # Step 7: Manually verify Bias Score calculation
+    print("\n7. Manually verifying Bias Score calculation...")
+    
+    if "bias_score" in results and results["bias_score"] is not None:
+        manual_bias_sum = 0.0
+        for result in results["results"]:
+            conf = result["confidence"]  # 0 or 1
+            correctness = 1 if result["is_correct"] else 0
+            bias_contribution = conf - correctness  # Note: NOT squared
+            manual_bias_sum += bias_contribution
+        
+        manual_bias = manual_bias_sum / len(results["results"])
+        calculated_bias = results["bias_score"]
+        
+        print(f"   Manual calculation: {manual_bias:+.3f}")
+        print(f"   API calculation: {calculated_bias:+.3f}")
+        
+        # Allow small floating point difference
+        assert abs(manual_bias - calculated_bias) < 0.001, \
+            f"Bias Score mismatch: {manual_bias} != {calculated_bias}"
+        
+        print("   ✓ Bias Score calculation verified!")
+        
+        # Verify Bias Score is in valid range [-1, 1]
+        assert -1 <= results["bias_score"] <= 1, f"Invalid Bias Score: {results['bias_score']}"
+        print(f"   ✓ Bias Score in valid range [-1, 1]")
+        
+        # Interpret bias
+        if calculated_bias > 0.1:
+            print(f"   → User is overconfident (bias = {calculated_bias:+.3f})")
+        elif calculated_bias < -0.1:
+            print(f"   → User is underconfident (bias = {calculated_bias:+.3f})")
+        else:
+            print(f"   → User is well-calibrated (bias = {calculated_bias:+.3f})")
+    else:
+        print("   ✗ Bias Score not found in results!")
+        return False
+    
+    # Step 8: Test retrieval of results
+    print("\n8. Testing results retrieval...")
     response = requests.get(f"{API_BASE}/exams/{exam_id}/results")
     assert response.status_code == 200, f"Failed to retrieve results: {response.status_code}"
     
     retrieved_results = response.json()
     assert retrieved_results["brier_score"] == results["brier_score"], \
         "Brier Score changed after retrieval"
+    assert retrieved_results["bias_score"] == results["bias_score"], \
+        "Bias Score changed after retrieval"
     
-    print("   ✓ Results retrieved successfully with Brier Score")
+    print("   ✓ Results retrieved successfully with Brier Score and Bias Score")
     
     print("\n" + "=" * 60)
     print("✓ ALL TESTS PASSED!")

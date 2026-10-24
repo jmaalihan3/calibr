@@ -78,6 +78,7 @@ def submit_exam(exam_id: int, answers: Dict[str, int], confidence: Dict[str, int
         - total: Total number of questions
         - percentage: Score as percentage (0-100)
         - brier_score: Calibration metric (0=perfect, 1=worst)
+        - bias_score: Bias metric (-1 to 1, negative=underconfident, positive=overconfident)
         - results: List of result objects with question details
     
     Process:
@@ -111,6 +112,8 @@ def submit_exam(exam_id: int, answers: Dict[str, int], confidence: Dict[str, int
     results = []
     brier_sum = 0.0
     brier_count = 0
+    bias_sum = 0.0
+    bias_count = 0
     
     for question_id, question_data in exam_data["questions"].items():
         user_answer = exam_data["user_answers"].get(question_id)
@@ -121,14 +124,17 @@ def submit_exam(exam_id: int, answers: Dict[str, int], confidence: Dict[str, int
         if is_correct:
             score += 1
         
-        # Calculate Brier Score contribution for this question
+        # Calculate Brier Score and Bias Score contributions for this question
         # Brier = (confidence - correctness)^2
+        # Bias = (confidence - correctness)
         # confidence: 1 = Confident, 0 = Not Confident
         # correctness: 1 = Correct, 0 = Incorrect
         if user_conf is not None:
             correctness = 1 if is_correct else 0
             brier_sum += (user_conf - correctness) ** 2
             brier_count += 1
+            bias_sum += (user_conf - correctness)
+            bias_count += 1
         
         # Determine calibration match
         # Match = (confident AND correct) OR (not confident AND incorrect)
@@ -156,6 +162,10 @@ def submit_exam(exam_id: int, answers: Dict[str, int], confidence: Dict[str, int
     # Calculate final Brier Score (average)
     brier_score = (brier_sum / brier_count) if brier_count > 0 else None
     
+    # Calculate final Bias Score (average)
+    # Bias > 0 = overconfident, Bias < 0 = underconfident, Bias = 0 = calibrated
+    bias_score = (bias_sum / bias_count) if bias_count > 0 else None
+    
     # Update exam with final score
     db.update_exam_score(exam_id, score)
     
@@ -164,6 +174,7 @@ def submit_exam(exam_id: int, answers: Dict[str, int], confidence: Dict[str, int
         "total": total_questions,
         "percentage": round(percentage, 2),
         "brier_score": round(brier_score, 3) if brier_score is not None else None,
+        "bias_score": round(bias_score, 3) if bias_score is not None else None,
         "results": results
     }
 
@@ -177,7 +188,7 @@ def get_exam_results(exam_id: int) -> Dict:
     
     Returns:
         Dictionary containing exam results (same structure as submit_exam)
-        Includes Brier Score and calibration data if confidence was recorded
+        Includes Brier Score, Bias Score, and calibration data if confidence was recorded
     
     Raises:
         ValueError: If exam not found
@@ -196,6 +207,8 @@ def get_exam_results(exam_id: int) -> Dict:
     score = 0
     brier_sum = 0.0
     brier_count = 0
+    bias_sum = 0.0
+    bias_count = 0
     
     for question_id, question_data in exam_data["questions"].items():
         user_answer = exam_data["user_answers"].get(question_id)
@@ -206,11 +219,13 @@ def get_exam_results(exam_id: int) -> Dict:
         if is_correct:
             score += 1
         
-        # Calculate Brier Score contribution
+        # Calculate Brier Score and Bias Score contributions
         if user_conf is not None:
             correctness = 1 if is_correct else 0
             brier_sum += (user_conf - correctness) ** 2
             brier_count += 1
+            bias_sum += (user_conf - correctness)
+            bias_count += 1
         
         # Determine calibration match
         calibrated = None
@@ -236,11 +251,15 @@ def get_exam_results(exam_id: int) -> Dict:
     # Calculate final Brier Score
     brier_score = (brier_sum / brier_count) if brier_count > 0 else None
     
+    # Calculate final Bias Score
+    bias_score = (bias_sum / bias_count) if bias_count > 0 else None
+    
     return {
         "score": score,
         "total": total_questions,
         "percentage": round(percentage, 2),
         "brier_score": round(brier_score, 3) if brier_score is not None else None,
+        "bias_score": round(bias_score, 3) if bias_score is not None else None,
         "results": results,
         "completed_at": exam_data["completed_at"]
     }

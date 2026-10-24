@@ -306,13 +306,14 @@ async function submitExam() {
 /**
  * Render exam results in the results section.
  * Groups questions by unit for better organization.
- * Displays Brier Score and calibration indicators.
+ * Displays Brier Score, Bias Score, and calibration indicators.
  * 
  * @param {Object} data - Results data from API
  * @param {number} data.score - Number of correct answers
  * @param {number} data.total - Total number of questions
  * @param {number} data.percentage - Score percentage
  * @param {number} data.brier_score - Calibration metric (0=perfect, 1=worst)
+ * @param {number} data.bias_score - Bias metric (-1 to 1, negative=underconfident, positive=overconfident)
  * @param {Array} data.results - Array of result objects
  */
 function renderResults(data) {
@@ -347,10 +348,65 @@ function renderResults(data) {
         `;
     }
     
+    // Render bias score
+    let biasScoreHTML = '';
+    if (data.bias_score !== null && data.bias_score !== undefined) {
+        // Determine bias interpretation
+        let biasLabel = '';
+        let biasColor = '';
+        let biasIcon = '';
+        let biasExplanation = '';
+        
+        if (Math.abs(data.bias_score) <= 0.10) {
+            biasLabel = 'Well-calibrated ✓';
+            biasColor = '#28a745';
+            biasIcon = '⚖️';
+            biasExplanation = 'Your confidence matches your performance';
+        } else if (data.bias_score > 0.10) {
+            if (data.bias_score <= 0.30) {
+                biasLabel = 'Slightly overconfident';
+                biasColor = '#ff9800';
+            } else {
+                biasLabel = 'Overconfident';
+                biasColor = '#ff4444';
+            }
+            biasIcon = '📈';
+            biasExplanation = 'You tend to be confident even when incorrect';
+        } else {  // bias_score < -0.10
+            if (data.bias_score >= -0.30) {
+                biasLabel = 'Slightly underconfident';
+                biasColor = '#4a9eff';
+            } else {
+                biasLabel = 'Underconfident';
+                biasColor = '#888';
+            }
+            biasIcon = '📉';
+            biasExplanation = 'You tend to lack confidence even when correct';
+        }
+        
+        biasScoreHTML = `
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #3a3a3a;">
+                <div style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">
+                    ${biasIcon} Bias Score
+                </div>
+                <div style="font-size: 2rem; font-weight: bold; color: #4a9eff;">
+                    ${data.bias_score >= 0 ? '+' : ''}${data.bias_score.toFixed(3)}
+                </div>
+                <div style="font-size: 1rem; color: ${biasColor}; margin-top: 5px;">
+                    ${biasLabel}
+                </div>
+                <div style="font-size: 0.85rem; color: #666; margin-top: 10px;">
+                    ${biasExplanation}
+                </div>
+            </div>
+        `;
+    }
+    
     scoreSummary.innerHTML = `
         <div class="score">${data.score} / ${data.total}</div>
         <div class="percentage">${data.percentage}%</div>
         ${brierScoreHTML}
+        ${biasScoreHTML}
     `;
     
     // Group results by unit

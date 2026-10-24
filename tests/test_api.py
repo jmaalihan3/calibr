@@ -130,7 +130,7 @@ def test_submit_exam_success(client, mock_services):
     assert data['percentage'] == 60.0
     
     # Verify service was called
-    mock_services.submit_exam.assert_called_once_with(123, answers)
+    mock_services.submit_exam.assert_called_once_with(123, answers, None)
 
 
 def test_submit_exam_not_found(client, mock_services):
