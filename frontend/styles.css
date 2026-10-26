@@ -456,46 +456,78 @@ header h1 {
     margin-bottom: 25px;
 }
 
-.confidence-buttons {
+/* Confidence slider container */
+.confidence-slider-container {
+    padding: 20px 0;
+}
+
+.confidence-slider-labels {
     display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-bottom: 20px;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    color: #888;
+    font-size: 0.9rem;
 }
 
-.btn-confidence {
-    flex: 1;
-    padding: 18px 24px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    border: 2px solid transparent;
-    min-width: 140px;
+#confidence-slider {
+    width: 100%;
+    height: 8px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: linear-gradient(to right, #ff4444, #ff9800, #4a9eff, #28a745);
+    border-radius: 5px;
+    outline: none;
+    margin: 15px 0;
 }
 
-.btn-confident {
-    background-color: #28a745;
-    color: #fff;
-    border-color: #28a745;
+#confidence-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    background: #4a9eff;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.btn-confident:hover {
-    background-color: #218838;
-    border-color: #1e7e34;
-    transform: translateY(-3px);
-    box-shadow: 0 6px 12px rgba(40, 167, 69, 0.4);
+#confidence-slider::-webkit-slider-thumb:hover {
+    width: 28px;
+    height: 28px;
+    background: #3a8eef;
 }
 
-.btn-not-confident {
-    background-color: #dc3545;
-    color: #fff;
-    border-color: #dc3545;
+#confidence-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    background: #4a9eff;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.btn-not-confident:hover {
-    background-color: #c82333;
-    border-color: #bd2130;
-    transform: translateY(-3px);
-    box-shadow: 0 6px 12px rgba(220, 53, 69, 0.4);
+#confidence-slider::-moz-range-thumb:hover {
+    width: 28px;
+    height: 28px;
+    background: #3a8eef;
+}
+
+.confidence-slider-value {
+    text-align: center;
+    margin: 20px 0;
+}
+
+#confidence-value-display {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #4a9eff;
+}
+
+#confirm-confidence-btn {
+    width: 100%;
+    margin-top: 10px;
 }
 
 .modal-footer {
