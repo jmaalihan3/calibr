@@ -75,15 +75,19 @@
             </div>
             
             <div class="modal-body">
-                <h3>Are you confident in your answer?</h3>
+                <h3>How confident are you in your answer?</h3>
                 
-                <div class="confidence-buttons">
-                    <button id="confident-btn" class="btn btn-confidence btn-confident">
-                        Confident
-                    </button>
-                    <button id="not-confident-btn" class="btn btn-confidence btn-not-confident">
-                        Not Confident
-                    </button>
+                <div class="confidence-slider-container">
+                    <div class="confidence-slider-labels">
+                        <span>0%</span>
+                        <span>50%</span>
+                        <span>100%</span>
+                    </div>
+                    <input type="range" id="confidence-slider" min="0" max="100" step="5" value="50">
+                    <div class="confidence-slider-value">
+                        <span id="confidence-value-display">50%</span>
+                    </div>
+                    <button id="confirm-confidence-btn" class="btn btn-primary">Confirm</button>
                 </div>
             </div>
             

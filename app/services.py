@@ -70,7 +70,7 @@ def submit_exam(exam_id: int, answers: Dict[str, int], confidence: Dict[str, int
         answers: Dictionary mapping question_id (as string) -> answer_index
                  Example: {"5": 1, "7": 2, "3": 0}
         confidence: Dictionary mapping question_id (as string) -> confidence
-                    1 = Confident, 0 = Not Confident
+                    0-100 = Confidence percentage
     
     Returns:
         Dictionary containing:
@@ -125,22 +125,23 @@ def submit_exam(exam_id: int, answers: Dict[str, int], confidence: Dict[str, int
             score += 1
         
         # Calculate Brier Score and Bias Score contributions for this question
-        # Brier = (confidence - correctness)^2
-        # Bias = (confidence - correctness)
-        # confidence: 1 = Confident, 0 = Not Confident
+        # Brier = (confidence_probability - correctness)^2
+        # Bias = (confidence_probability - correctness)
+        # confidence: 0-100 percentage, converted to 0-1 probability
         # correctness: 1 = Correct, 0 = Incorrect
         if user_conf is not None:
+            confidence_probability = user_conf / 100.0  # Convert percentage to probability
             correctness = 1 if is_correct else 0
-            brier_sum += (user_conf - correctness) ** 2
+            brier_sum += (confidence_probability - correctness) ** 2
             brier_count += 1
-            bias_sum += (user_conf - correctness)
+            bias_sum += (confidence_probability - correctness)
             bias_count += 1
         
         # Determine calibration match
-        # Match = (confident AND correct) OR (not confident AND incorrect)
+        # Match = (confident ≥50% AND correct) OR (not confident <50% AND incorrect)
         calibrated = None
         if user_conf is not None:
-            calibrated = (user_conf == 1 and is_correct) or (user_conf == 0 and not is_correct)
+            calibrated = (user_conf >= 50 and is_correct) or (user_conf < 50 and not is_correct)
         
         # Build result object for this question
         results.append({
@@ -221,16 +222,17 @@ def get_exam_results(exam_id: int) -> Dict:
         
         # Calculate Brier Score and Bias Score contributions
         if user_conf is not None:
+            confidence_probability = user_conf / 100.0  # Convert percentage to probability
             correctness = 1 if is_correct else 0
-            brier_sum += (user_conf - correctness) ** 2
+            brier_sum += (confidence_probability - correctness) ** 2
             brier_count += 1
-            bias_sum += (user_conf - correctness)
+            bias_sum += (confidence_probability - correctness)
             bias_count += 1
         
         # Determine calibration match
         calibrated = None
         if user_conf is not None:
-            calibrated = (user_conf == 1 and is_correct) or (user_conf == 0 and not is_correct)
+            calibrated = (user_conf >= 50 and is_correct) or (user_conf < 50 and not is_correct)
         
         results.append({
             "question_id": question_id,

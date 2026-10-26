@@ -17,7 +17,7 @@ const state = {
     questions: [],              // Array of question objects
     currentQuestionIndex: 0,    // Index of current question (0-based)
     userAnswers: {},            // Map of questionId -> answerIndex
-    userConfidence: {},         // Map of questionId -> confidence (1=Confident, 0=Not Confident)
+    userConfidence: {},         // Map of questionId -> confidence (0-100 percentage)
     pendingConfidence: false    // Whether waiting for confidence input
 };
 
@@ -40,11 +40,20 @@ function init() {
     // Results section: New exam button
     document.getElementById('new-exam-btn').addEventListener('click', resetToHome);
     
-    // Confidence modal: Confidence buttons
-    document.getElementById('confident-btn').addEventListener('click', () => handleConfidence(1));
-    document.getElementById('not-confident-btn').addEventListener('click', () => handleConfidence(0));
+    // Confidence modal: Slider and confirm button
+    const slider = document.getElementById('confidence-slider');
+    const valueDisplay = document.getElementById('confidence-value-display');
     
-    // Keyboard shortcuts for confidence modal (C = Confident, N = Not Confident)
+    slider.addEventListener('input', (e) => {
+        valueDisplay.textContent = `${e.target.value}%`;
+    });
+    
+    document.getElementById('confirm-confidence-btn').addEventListener('click', () => {
+        const confidenceValue = parseInt(slider.value);
+        handleConfidence(confidenceValue);
+    });
+    
+    // Keyboard shortcut: Enter to confirm confidence
     document.addEventListener('keydown', handleKeyboardShortcut);
     
     console.log('Application initialized');
@@ -479,12 +488,14 @@ function renderResults(data) {
             let confidenceText = 'N/A';
             let confidenceColor = '#888';
             if (result.confidence !== null && result.confidence !== undefined) {
-                if (result.confidence === 1) {
-                    confidenceText = '✓ Confident';
-                    confidenceColor = '#28a745';
+                confidenceText = `${result.confidence}%`;
+                // Color based on confidence level
+                if (result.confidence >= 70) {
+                    confidenceColor = '#28a745'; // Green for high confidence
+                } else if (result.confidence >= 40) {
+                    confidenceColor = '#4a9eff'; // Blue for medium confidence
                 } else {
-                    confidenceText = '✗ Not Confident';
-                    confidenceColor = '#ff4444';
+                    confidenceColor = '#ff9800'; // Orange for low confidence
                 }
             }
             
@@ -567,6 +578,11 @@ function showConfidenceModal(selectedOptionIndex) {
     document.getElementById('confidence-progress').textContent = 
         `Question ${questionNumber} of ${totalQuestions}${unitInfo}`;
     
+    // Reset slider to 50%
+    const slider = document.getElementById('confidence-slider');
+    slider.value = 50;
+    document.getElementById('confidence-value-display').textContent = '50%';
+    
     // Show modal
     document.getElementById('confidence-modal').style.display = 'block';
     state.pendingConfidence = true;
@@ -583,9 +599,9 @@ function hideConfidenceModal() {
 
 
 /**
- * Handle confidence selection (Confident or Not Confident).
+ * Handle confidence selection from slider.
  * 
- * @param {number} confidence - 1 for Confident, 0 for Not Confident
+ * @param {number} confidence - Confidence percentage (0-100)
  */
 function handleConfidence(confidence) {
     const question = state.questions[state.currentQuestionIndex];
@@ -596,13 +612,13 @@ function handleConfidence(confidence) {
     // Hide modal
     hideConfidenceModal();
     
-    console.log(`Confidence recorded: ${confidence === 1 ? 'Confident' : 'Not Confident'}`);
+    console.log(`Confidence recorded: ${confidence}%`);
 }
 
 
 /**
  * Handle keyboard shortcuts.
- * C = Confident, N = Not Confident (only when modal is open)
+ * Enter = Confirm confidence (only when modal is open)
  * 
  * @param {KeyboardEvent} event - Keyboard event
  */
@@ -612,14 +628,11 @@ function handleKeyboardShortcut(event) {
         return;
     }
     
-    const key = event.key.toLowerCase();
-    
-    if (key === 'c') {
+    if (event.key === 'Enter') {
         event.preventDefault();
-        handleConfidence(1); // Confident
-    } else if (key === 'n') {
-        event.preventDefault();
-        handleConfidence(0); // Not Confident
+        const slider = document.getElementById('confidence-slider');
+        const confidenceValue = parseInt(slider.value);
+        handleConfidence(confidenceValue);
     }
 }
 
