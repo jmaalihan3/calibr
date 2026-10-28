@@ -16,6 +16,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import os
 from app.routers import exams
 from app import db
 
@@ -50,17 +51,24 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Configure CORS for development
-# Allow requests from localhost for frontend development
-# Note: In production, restrict origins to specific domains
+# Configure CORS
+# Allow requests from localhost for frontend development and Render deployment
+allowed_origins = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080"
+]
+
+# Add Render URL if deployed (Render sets this env var)
+render_url = os.getenv("RENDER_EXTERNAL_URL")
+if render_url:
+    allowed_origins.append(render_url)
+    allowed_origins.append(render_url.replace("http://", "https://"))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-        "http://localhost:8080",
-        "http://127.0.0.1:8080"
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

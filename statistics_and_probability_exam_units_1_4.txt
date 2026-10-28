@@ -1,0 +1,187 @@
+STATISTICS & PROBABILITY EXAM
+Units 1, 2, 3, & 4
+
+======================================================================
+UNIT 1: ANALYZING CATEGORICAL DATA
+======================================================================
+
+Question 1
+A researcher classifies individuals into three eye color groups: Blue, Brown, and Green. What type of variable is eye color?
+  A) Quantitative discrete
+  B) Quantitative continuous
+  C) Categorical nominal
+  D) Categorical ordinal
+
+Question 2
+A conditional relative frequency distribution is used primarily to examine which of the following?
+  A) The overall proportion of each category in a single variable regardless of other variables.
+  B) The distribution of one categorical variable among a specific subgroup defined by another categorical variable.
+  C) The shape and spread of a quantitative dataset.
+  D) The standard deviation across multiple sample groups.
+
+Question 3
+Which of the following visual displays is most appropriate for comparing proportions across categories within two or more groups?
+  A) Histogram
+  B) Stem-and-leaf plot
+  C) Segmented bar chart
+  D) Boxplot
+
+Question 4
+In a two-way table comparing gender (Row: Male, Female) and preferred leisure activity (Column: Sports, Reading, Gaming), what is a marginal distribution?
+  A) The distribution of preferred leisure activity calculated only for females.
+  B) The distribution of gender calculated only for respondents who prefer gaming.
+  C) The distribution of one variable alone, using the total row or column counts divided by the grand total.
+  D) The proportion of respondents who are both male and prefer sports.
+
+Question 5
+If two categorical variables are independent, what would you expect to see when comparing conditional relative frequencies?
+  A) The conditional distributions of one variable differ significantly across the categories of the second variable.
+  B) The conditional distributions of one variable are nearly identical across all categories of the second variable.
+  C) The joint relative frequencies must all equal 0.50.
+  D) The total counts for each row and column must be equal.
+
+
+======================================================================
+UNIT 2: DISPLAYING AND COMPARING QUANTITATIVE DATA
+======================================================================
+
+Question 6
+What is a key difference between a bar chart and a histogram?
+  A) Bar charts display continuous quantitative data, while histograms display categorical data.
+  B) Histograms have gaps between bars to show distinct categories, while bar charts touch.
+  C) Bar charts are used for categorical variables with space between bars, while histograms display continuous quantitative data with adjacent bars.
+  D) Histograms can only show relative frequency, whereas bar charts can only show raw counts.
+
+Question 7
+A dataset recorded the test scores of 100 students. The resulting plot shows a long tail extending toward the left (lower values), while most scores cluster near the high end. How would you describe the shape of this distribution?
+  A) Symmetric
+  B) Right-skewed
+  C) Left-skewed
+  D) Bimodal and uniform
+
+Question 8
+Which of the following graphical displays preserves the individual data values while showing the distribution's shape?
+  A) Boxplot
+  B) Histogram
+  C) Stem-and-leaf plot
+  D) Cumulative relative frequency plot
+
+Question 9
+When comparing two quantitative distributions using dotplots, which three main characteristics should always be discussed?
+  A) Mean, median, and mode only
+  B) Shape, center, and spread (plus unusual features like outliers)
+  C) Sample size, standard error, and confidence level
+  D) Interquartile range, variance, and standard deviation
+
+Question 10
+Consider a stem-and-leaf plot where the stem unit is 10 and the leaf unit is 1. If a row reads "4 | 0 2 5 8", what individual values are represented?
+  A) 4.0, 4.2, 4.5, 4.8
+  B) 4, 0, 2, 5, 8
+  C) 40, 42, 45, 48
+  D) 400, 420, 450, 480
+
+
+======================================================================
+UNIT 3: SUMMARIZING QUANTITATIVE DATA
+======================================================================
+
+Question 11
+Which set of summary statistics is preferred when describing a dataset that is strongly skewed or contains extreme outliers?
+  A) Mean and standard deviation
+  B) Median and interquartile range (IQR)
+  C) Mean and range
+  D) Variance and standard error
+
+Question 12
+A dataset has a minimum value of 12, Q1 of 25, median of 34, Q3 of 46, and maximum value of 85. According to the standard $1.5 \times \text{IQR}$ rule, which of the following boundaries determines whether a high value is an outlier?
+  A) Any value greater than 67.5
+  B) Any value greater than 77.5
+  C) Any value greater than 80.0
+  D) Any value greater than 85.0
+
+Question 13
+If a constant value of 5 is added to every score in a quantitative distribution, how are the mean and standard deviation affected?
+  A) The mean increases by 5, and the standard deviation increases by 5.
+  B) The mean increases by 5, but the standard deviation remains unchanged.
+  C) The mean remains unchanged, but the standard deviation increases by 5.
+  D) Both the mean and standard deviation remain unchanged.
+
+Question 14
+What does the z-score of an observation measure?
+  A) The probability that the observation occurs by random chance.
+  B) The number of standard deviations an observation falls above or below the mean.
+  C) The percentage of observations that fall below that value in a normal distribution.
+  D) The distance between the observation and the median in units of IQR.
+
+Question 15
+If a student scores in the 85th percentile on a standardized test, what does this mean?
+  A) The student answered 85% of the questions correctly.
+  B) Approximately 85% of all test takers scored equal to or lower than this student.
+  C) The student's score is 1.85 standard deviations above the mean score.
+  D) Only 85 students scored higher than this student.
+
+
+======================================================================
+UNIT 4: MODELING DATA DISTRIBUTIONS
+======================================================================
+
+Question 16
+What is the total area under a standardized density curve (such as a standard normal curve)?
+  A) Dependent on the standard deviation
+  B) 0.50
+  C) 1.00
+  D) 100.00
+
+Question 17
+A standard normal distribution (Z-distribution) has a mean ($\mu$) and standard deviation ($\sigma$) of:
+  A) $\mu = 0, \sigma = 1$
+  B) $\mu = 1, \sigma = 0$
+  C) $\mu = 100, \sigma = 15$
+  D) $\mu = 50, \sigma = 10$
+
+Question 18
+Using the 68-95-99.7 (Empirical) Rule, approximately what percentage of observations in a normal distribution lie between $z = -2$ and $z = +2$?
+  A) 34%
+  B) 68%
+  C) 95%
+  D) 99.7%
+
+Question 19
+Heights of adult women in a city are approximately normally distributed with a mean of 65 inches and a standard deviation of 2.5 inches. What is the z-score of a woman who is 70 inches tall?
+  A) $+1.0$
+  B) $+1.5$
+  C) $+2.0$
+  D) $+2.5$
+
+Question 20
+A normal probability plot is constructed to assess whether a dataset comes from a normally distributed population. What visual pattern indicates that the data is approximately normal?
+  A) Points forming a clear U-shaped curve
+  B) Points roughly following a straight linear line
+  C) Points clustered heavily at both ends with a gap in the middle
+  D) Points scattered completely randomly with no discernible trend
+
+
+======================================================================
+ANSWER KEY
+======================================================================
+
+ 1. C) Categorical nominal
+ 2. B) The distribution of one categorical variable among a specific subgroup defined by another categorical variable.
+ 3. C) Segmented bar chart
+ 4. C) The distribution of one variable alone, using the total row or column counts divided by the grand total.
+ 5. B) The conditional distributions of one variable are nearly identical across all categories of the second variable.
+ 6. C) Bar charts are used for categorical variables with space between bars, while histograms display continuous quantitative data with adjacent bars.
+ 7. C) Left-skewed
+ 8. C) Stem-and-leaf plot
+ 9. B) Shape, center, and spread (plus unusual features like outliers)
+10. C) 40, 42, 45, 48
+11. B) Median and interquartile range (IQR)
+12. B) Any value greater than 77.5  [Calculation: IQR = 46 - 25 = 21; Q3 + 1.5(IQR) = 46 + 1.5(21) = 46 + 31.5 = 77.5]
+13. B) The mean increases by 5, but the standard deviation remains unchanged.
+14. B) The number of standard deviations an observation falls above or below the mean.
+15. B) Approximately 85% of all test takers scored equal to or lower than this student.
+16. C) 1.00
+17. A) $\mu = 0, \sigma = 1$
+18. C) 95%
+19. C) $+2.0$  [Calculation: z = (70 - 65) / 2.5 = 5 / 2.5 = 2.0]
+20. B) Points roughly following a straight linear line
