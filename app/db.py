@@ -304,8 +304,9 @@ def create_exam(question_ids: List[int]) -> int:
         
         # Get last inserted ID (different for SQLite vs PostgreSQL)
         if DATABASE_URL:
-            cursor.execute("SELECT lastval()")
-            return cursor.fetchone()[0]
+            cursor.execute("SELECT lastval() as id")
+            result = cursor.fetchone()
+            return result['id']
         else:
             return cursor.lastrowid
 
