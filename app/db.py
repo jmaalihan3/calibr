@@ -140,9 +140,16 @@ def init_db():
         """)
         
         # Check if questions already exist to avoid duplicates
-        cursor.execute("SELECT COUNT(*) FROM questions")
+        cursor.execute("SELECT COUNT(*) as count FROM questions")
         count_result = cursor.fetchone()
-        question_count = count_result[0] if DATABASE_URL else count_result[0]
+        
+        # Handle different return types for SQLite vs PostgreSQL
+        if DATABASE_URL:
+            # PostgreSQL with RealDictCursor returns dict
+            question_count = count_result['count']
+        else:
+            # SQLite returns tuple-like Row
+            question_count = count_result[0]
         
         if question_count == 0:
             # Populate with sample questions
