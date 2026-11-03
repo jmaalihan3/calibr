@@ -219,6 +219,8 @@ def get_exam_results(exam_id: int) -> Dict:
     brier_count = 0
     bias_sum = 0.0
     bias_count = 0
+    confidence_sum = 0.0
+    confidence_count = 0
     
     for question_id, question_data in exam_data["questions"].items():
         user_answer = exam_data["user_answers"].get(question_id)
@@ -237,6 +239,8 @@ def get_exam_results(exam_id: int) -> Dict:
             brier_count += 1
             bias_sum += (confidence_probability - correctness)
             bias_count += 1
+            confidence_sum += user_conf
+            confidence_count += 1
         
         # Determine calibration match
         calibrated = None
@@ -265,12 +269,16 @@ def get_exam_results(exam_id: int) -> Dict:
     # Calculate final Bias Score
     bias_score = (bias_sum / bias_count) if bias_count > 0 else None
     
+    # Calculate average confidence
+    average_confidence = (confidence_sum / confidence_count) if confidence_count > 0 else None
+    
     return {
         "score": score,
         "total": total_questions,
         "percentage": round(percentage, 2),
         "brier_score": round(brier_score, 3) if brier_score is not None else None,
         "bias_score": round(bias_score, 3) if bias_score is not None else None,
+        "average_confidence": round(average_confidence, 1) if average_confidence is not None else None,
         "results": results,
         "completed_at": exam_data["completed_at"]
     }
