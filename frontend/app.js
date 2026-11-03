@@ -338,6 +338,71 @@ function renderResults(data) {
     // Render score summary with Brier Score
     const scoreSummary = document.getElementById('score-summary');
     
+    // Build confidence vs performance comparison section HTML
+    let comparisonSectionHTML = '';
+    if (data.average_confidence !== null && data.average_confidence !== undefined && 
+        data.percentage !== null && data.percentage !== undefined) {
+        
+        const avgConfidence = parseFloat(data.average_confidence);
+        const accuracy = parseFloat(data.percentage);
+        const difference = avgConfidence - accuracy;
+        
+        // Determine calibration state
+        let differenceClass = '';
+        let differenceLabel = '';
+        let differenceIcon = '';
+        
+        if (Math.abs(difference) <= 5) {
+            differenceClass = 'well-calibrated';
+            differenceLabel = 'Well-calibrated on average ✓';
+            differenceIcon = '⚖️';
+        } else if (difference > 5) {
+            differenceClass = 'overconfident';
+            differenceLabel = 'Overconfidence';
+            differenceIcon = '📈';
+        } else {
+            differenceClass = 'underconfident';
+            differenceLabel = 'Underconfidence';
+            differenceIcon = '📉';
+        }
+        
+        comparisonSectionHTML = `
+            <div class="calibration-comparison">
+                <h3>Confidence vs. Performance</h3>
+                
+                <div class="comparison-bar-container">
+                    <div class="comparison-label">
+                        <span class="comparison-label-text">Average Confidence</span>
+                        <span class="comparison-label-value" style="color: #4a9eff;">${avgConfidence.toFixed(1)}%</span>
+                    </div>
+                    <div class="comparison-bar-background">
+                        <div class="comparison-bar-fill comparison-bar-confidence" style="width: ${avgConfidence}%;"></div>
+                    </div>
+                </div>
+                
+                <div class="comparison-bar-container">
+                    <div class="comparison-label">
+                        <span class="comparison-label-text">Actual Accuracy</span>
+                        <span class="comparison-label-value" style="color: #28a745;">${accuracy.toFixed(1)}%</span>
+                    </div>
+                    <div class="comparison-bar-background">
+                        <div class="comparison-bar-fill comparison-bar-accuracy" style="width: ${accuracy}%;"></div>
+                    </div>
+                </div>
+                
+                <div class="comparison-difference ${differenceClass}">
+                    <div class="comparison-difference-label">Difference</div>
+                    <div class="comparison-difference-value">
+                        ${difference >= 0 ? '+' : ''}${difference.toFixed(1)} percentage points
+                    </div>
+                    <div class="comparison-difference-interpretation">
+                        ${differenceIcon} ${differenceLabel}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
     // Build calibration section HTML
     let calibrationSectionHTML = '';
     
@@ -453,6 +518,7 @@ function renderResults(data) {
             <div class="score">${data.score} / ${data.total}</div>
             <div class="percentage">${data.percentage}%</div>
         </div>
+        ${comparisonSectionHTML}
         ${calibrationSectionHTML}
     `;
     

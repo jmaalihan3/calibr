@@ -552,6 +552,122 @@ header h1 {
     margin-top: 10px;
 }
 
+/* Confidence vs Performance Comparison */
+.calibration-comparison {
+    background-color: #333;
+    padding: 25px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+}
+
+.calibration-comparison h3 {
+    color: #e0e0e0;
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.comparison-bar-container {
+    margin-bottom: 20px;
+}
+
+.comparison-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.comparison-label-text {
+    font-size: 0.95rem;
+    color: #b0b0b0;
+    font-weight: 500;
+}
+
+.comparison-label-value {
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.comparison-bar-background {
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    height: 28px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #444;
+}
+
+.comparison-bar-fill {
+    height: 100%;
+    border-radius: 7px;
+    transition: width 0.6s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 10px;
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.comparison-bar-confidence {
+    background: linear-gradient(90deg, #4a9eff 0%, #6bb3ff 100%);
+}
+
+.comparison-bar-accuracy {
+    background: linear-gradient(90deg, #28a745 0%, #34ce57 100%);
+}
+
+.comparison-difference {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #444;
+    text-align: center;
+}
+
+.comparison-difference-label {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.comparison-difference-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.comparison-difference-interpretation {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 5px;
+}
+
+.comparison-difference.overconfident .comparison-difference-value {
+    color: #ff9800;
+}
+
+.comparison-difference.underconfident .comparison-difference-value {
+    color: #4a9eff;
+}
+
+.comparison-difference.well-calibrated .comparison-difference-value {
+    color: #28a745;
+}
+
+.comparison-difference.overconfident .comparison-difference-interpretation {
+    color: #ff9800;
+}
+
+.comparison-difference.underconfident .comparison-difference-interpretation {
+    color: #4a9eff;
+}
+
+.comparison-difference.well-calibrated .comparison-difference-interpretation {
+    color: #28a745;
+}
+
 /* Mobile responsiveness for modal */
 @media (max-width: 600px) {
     .modal-content {
@@ -571,5 +687,41 @@ header h1 {
     .btn-confidence {
         width: 100%;
         min-width: auto;
+    }
+    
+    /* Comparison section responsiveness */
+    .calibration-comparison {
+        padding: 20px;
+    }
+    
+    .calibration-comparison h3 {
+        font-size: 1.1rem;
+    }
+    
+    .comparison-label {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+        margin-bottom: 10px;
+    }
+    
+    .comparison-label-text {
+        font-size: 0.85rem;
+    }
+    
+    .comparison-label-value {
+        font-size: 1rem;
+    }
+    
+    .comparison-bar-background {
+        height: 24px;
+    }
+    
+    .comparison-difference-value {
+        font-size: 1.4rem;
+    }
+    
+    .comparison-difference-interpretation {
+        font-size: 0.9rem;
     }
 }
