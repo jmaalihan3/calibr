@@ -557,12 +557,84 @@ function renderResults(data) {
         const unitCorrect = unitResults.filter(r => r.is_correct).length;
         const unitTotal = unitResults.length;
         
+        // Calculate unit-specific confidence vs performance
+        let unitComparisonHTML = '';
+        const resultsWithConfidence = unitResults.filter(r => r.confidence !== null && r.confidence !== undefined);
+        
+        if (resultsWithConfidence.length > 0) {
+            // Calculate unit average confidence
+            const unitConfidenceSum = resultsWithConfidence.reduce((sum, r) => sum + r.confidence, 0);
+            const unitAvgConfidence = unitConfidenceSum / resultsWithConfidence.length;
+            
+            // Calculate unit accuracy
+            const unitAccuracy = (unitCorrect / unitTotal) * 100;
+            
+            // Calculate difference
+            const unitDifference = unitAvgConfidence - unitAccuracy;
+            
+            // Determine calibration state
+            let unitDiffClass = '';
+            let unitDiffLabel = '';
+            let unitDiffIcon = '';
+            
+            if (Math.abs(unitDifference) <= 5) {
+                unitDiffClass = 'well-calibrated';
+                unitDiffLabel = 'Well-calibrated ✓';
+                unitDiffIcon = '⚖️';
+            } else if (unitDifference > 5) {
+                unitDiffClass = 'overconfident';
+                unitDiffLabel = 'Overconfidence';
+                unitDiffIcon = '📈';
+            } else {
+                unitDiffClass = 'underconfident';
+                unitDiffLabel = 'Underconfidence';
+                unitDiffIcon = '📉';
+            }
+            
+            unitComparisonHTML = `
+                <div class="calibration-comparison" style="margin: 0; border-radius: 0; border-bottom: 1px solid #444;">
+                    <h4 style="font-size: 1rem; color: #e0e0e0; margin-bottom: 15px; font-weight: 600;">Confidence vs. Performance</h4>
+                    
+                    <div class="comparison-bar-container">
+                        <div class="comparison-label">
+                            <span class="comparison-label-text">Average Confidence</span>
+                            <span class="comparison-label-value" style="color: #4a9eff;">${unitAvgConfidence.toFixed(1)}%</span>
+                        </div>
+                        <div class="comparison-bar-background">
+                            <div class="comparison-bar-fill comparison-bar-confidence" style="width: ${unitAvgConfidence}%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="comparison-bar-container">
+                        <div class="comparison-label">
+                            <span class="comparison-label-text">Actual Accuracy</span>
+                            <span class="comparison-label-value" style="color: #28a745;">${unitAccuracy.toFixed(1)}%</span>
+                        </div>
+                        <div class="comparison-bar-background">
+                            <div class="comparison-bar-fill comparison-bar-accuracy" style="width: ${unitAccuracy}%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="comparison-difference ${unitDiffClass}">
+                        <div class="comparison-difference-label">Difference</div>
+                        <div class="comparison-difference-value" style="font-size: 1.3rem;">
+                            ${unitDifference >= 0 ? '+' : ''}${unitDifference.toFixed(1)} percentage points
+                        </div>
+                        <div class="comparison-difference-interpretation" style="font-size: 0.9rem;">
+                            ${unitDiffIcon} ${unitDiffLabel}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
         htmlContent += `
             <div class="unit-section">
                 <div class="unit-header">
                     <h3>Unit ${unit}: ${unitData.unitName}</h3>
                     <span class="unit-score">${unitCorrect} / ${unitTotal} correct</span>
                 </div>
+                ${unitComparisonHTML}
                 
                 <table class="results-table">
                     <thead>

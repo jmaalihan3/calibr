@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Per-Unit Comparison Test</title>
+    <link rel="stylesheet" href="/styles.css?v=3">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Per-Unit Confidence vs Performance Test</h1>
+        </header>
+
+        <section class="section active">
+            <div class="card">
+                <h2>Exam Results #82</h2>
+                
+                <div id="results-details">
+                    <!-- Unit 1: Underconfident -->
+                    <div class="unit-section">
+                        <div class="unit-header">
+                            <h3>Unit 1: ANALYZING CATEGORICAL DATA</h3>
+                            <span class="unit-score">1 / 2 correct</span>
+                        </div>
+                        
+                        <div class="calibration-comparison" style="margin: 0; border-radius: 0; border-bottom: 1px solid #444;">
+                            <h4 style="font-size: 1rem; color: #e0e0e0; margin-bottom: 15px; font-weight: 600;">Confidence vs. Performance</h4>
+                            
+                            <div class="comparison-bar-container">
+                                <div class="comparison-label">
+                                    <span class="comparison-label-text">Average Confidence</span>
+                                    <span class="comparison-label-value" style="color: #4a9eff;">40.0%</span>
+                                </div>
+                                <div class="comparison-bar-background">
+                                    <div class="comparison-bar-fill comparison-bar-confidence" style="width: 40%;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="comparison-bar-container">
+                                <div class="comparison-label">
+                                    <span class="comparison-label-text">Actual Accuracy</span>
+                                    <span class="comparison-label-value" style="color: #28a745;">50.0%</span>
+                                </div>
+                                <div class="comparison-bar-background">
+                                    <div class="comparison-bar-fill comparison-bar-accuracy" style="width: 50%;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="comparison-difference underconfident">
+                                <div class="comparison-difference-label">Difference</div>
+                                <div class="comparison-difference-value" style="font-size: 1.3rem;">
+                                    -10.0 percentage points
+                                </div>
+                                <div class="comparison-difference-interpretation" style="font-size: 0.9rem;">
+                                    📉 Underconfidence
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p style="padding: 20px; color: #888;">Question results would appear here...</p>
+                    </div>
+
+                    <!-- Unit 2: Overconfident -->
+                    <div class="unit-section">
+                        <div class="unit-header">
+                            <h3>Unit 2: DISPLAYING AND COMPARING QUANTITATIVE DATA</h3>
+                            <span class="unit-score">0 / 2 correct</span>
+                        </div>
+                        
+                        <div class="calibration-comparison" style="margin: 0; border-radius: 0; border-bottom: 1px solid #444;">
+                            <h4 style="font-size: 1rem; color: #e0e0e0; margin-bottom: 15px; font-weight: 600;">Confidence vs. Performance</h4>
+                            
+                            <div class="comparison-bar-container">
+                                <div class="comparison-label">
+                                    <span class="comparison-label-text">Average Confidence</span>
+                                    <span class="comparison-label-value" style="color: #4a9eff;">60.0%</span>
+                                </div>
+                                <div class="comparison-bar-background">
+                                    <div class="comparison-bar-fill comparison-bar-confidence" style="width: 60%;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="comparison-bar-container">
+                                <div class="comparison-label">
+                                    <span class="comparison-label-text">Actual Accuracy</span>
+                                    <span class="comparison-label-value" style="color: #28a745;">0.0%</span>
+                                </div>
+                                <div class="comparison-bar-background">
+                                    <div class="comparison-bar-fill comparison-bar-accuracy" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="comparison-difference overconfident">
+                                <div class="comparison-difference-label">Difference</div>
+                                <div class="comparison-difference-value" style="font-size: 1.3rem;">
+                                    +60.0 percentage points
+                                </div>
+                                <div class="comparison-difference-interpretation" style="font-size: 0.9rem;">
+                                    📈 Overconfidence
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p style="padding: 20px; color: #888;">Question results would appear here...</p>
+                    </div>
+
+                    <!-- Unit 4: Well-calibrated -->
+                    <div class="unit-section">
+                        <div class="unit-header">
+                            <h3>Unit 4: MODELING DATA DISTRIBUTIONS</h3>
+                            <span class="unit-score">1 / 1 correct</span>
+                        </div>
+                        
+                        <div class="calibration-comparison" style="margin: 0; border-radius: 0; border-bottom: 1px solid #444;">
+                            <h4 style="font-size: 1rem; color: #e0e0e0; margin-bottom: 15px; font-weight: 600;">Confidence vs. Performance</h4>
+                            
+                            <div class="comparison-bar-container">
+                                <div class="comparison-label">
+                                    <span class="comparison-label-text">Average Confidence</span>
+                                    <span class="comparison-label-value" style="color: #4a9eff;">80.0%</span>
+                                </div>
+                                <div class="comparison-bar-background">
+                                    <div class="comparison-bar-fill comparison-bar-confidence" style="width: 80%;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="comparison-bar-container">
+                                <div class="comparison-label">
+                                    <span class="comparison-label-text">Actual Accuracy</span>
+                                    <span class="comparison-label-value" style="color: #28a745;">100.0%</span>
+                                </div>
+                                <div class="comparison-bar-background">
+                                    <div class="comparison-bar-fill comparison-bar-accuracy" style="width: 100%;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="comparison-difference underconfident">
+                                <div class="comparison-difference-label">Difference</div>
+                                <div class="comparison-difference-value" style="font-size: 1.3rem;">
+                                    -20.0 percentage points
+                                </div>
+                                <div class="comparison-difference-interpretation" style="font-size: 0.9rem;">
+                                    📉 Underconfidence
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p style="padding: 20px; color: #888;">Question results would appear here...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</body>
+</html>
