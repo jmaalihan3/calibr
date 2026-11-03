@@ -85,6 +85,9 @@ async function startExam() {
     startBtn.disabled = true;
     startBtn.textContent = 'Loading...';
     
+    // Get selected number of questions
+    const numQuestions = parseInt(document.getElementById('num-questions').value);
+    
     try {
         // Call API to start exam
         const response = await fetch(`${API_BASE}/exams/start`, {
@@ -92,7 +95,7 @@ async function startExam() {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ num_questions: 5 })
+            body: JSON.stringify({ num_questions: numQuestions })
         });
         
         if (!response.ok) {
