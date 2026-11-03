@@ -335,6 +335,10 @@ function renderResults(data) {
     // Render score summary with Brier Score
     const scoreSummary = document.getElementById('score-summary');
     
+    // Build calibration section HTML
+    let calibrationSectionHTML = '';
+    
+    // Brier Score
     let brierScoreHTML = '';
     if (data.brier_score !== null && data.brier_score !== undefined) {
         // Determine calibration quality
@@ -355,15 +359,15 @@ function renderResults(data) {
         }
         
         brierScoreHTML = `
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #3a3a3a;">
-                <div style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">Calibration Score (Brier)</div>
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">Brier Score</div>
                 <div style="font-size: 2rem; font-weight: bold; color: #4a9eff;">${data.brier_score.toFixed(3)}</div>
                 <div style="font-size: 1rem; color: ${calibrationColor}; margin-top: 5px;">${calibrationLabel}</div>
             </div>
         `;
     }
     
-    // Render bias score
+    // Bias Score
     let biasScoreHTML = '';
     if (data.bias_score !== null && data.bias_score !== undefined) {
         // Determine bias interpretation
@@ -400,7 +404,7 @@ function renderResults(data) {
         }
         
         biasScoreHTML = `
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #3a3a3a;">
+            <div>
                 <div style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">
                     ${biasIcon} Bias Score
                 </div>
@@ -417,11 +421,21 @@ function renderResults(data) {
         `;
     }
     
+    // Combine both under Calibration header if either exists
+    if (brierScoreHTML || biasScoreHTML) {
+        calibrationSectionHTML = `
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #3a3a3a;">
+                <h3 style="font-size: 1.2rem; color: #e0e0e0; margin-bottom: 15px;">Calibration</h3>
+                ${brierScoreHTML}
+                ${biasScoreHTML}
+            </div>
+        `;
+    }
+    
     scoreSummary.innerHTML = `
         <div class="score">${data.score} / ${data.total}</div>
         <div class="percentage">${data.percentage}%</div>
-        ${brierScoreHTML}
-        ${biasScoreHTML}
+        ${calibrationSectionHTML}
     `;
     
     // Group results by unit
