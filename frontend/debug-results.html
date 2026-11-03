@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Results</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Debug: Exam Results</h1>
+        </header>
+
+        <section class="section active">
+            <div class="card">
+                <h2>Loading Results for Exam #79...</h2>
+                <div id="debug-output" style="background: #1a1a1a; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <pre id="data-display" style="color: #4a9eff; font-size: 0.9rem;"></pre>
+                </div>
+                <div id="results-display"></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        async function loadAndDisplayResults() {
+            try {
+                const response = await fetch('/api/exams/79/results');
+                const data = await response.json();
+                
+                // Show raw data
+                document.getElementById('data-display').textContent = JSON.stringify(data, null, 2);
+                
+                // Check conditions
+                const hasAvgConf = data.average_confidence !== null && data.average_confidence !== undefined;
+                const hasPercentage = data.percentage !== null && data.percentage !== undefined;
+                
+                console.log('Has average_confidence:', hasAvgConf, '=', data.average_confidence);
+                console.log('Has percentage:', hasPercentage, '=', data.percentage);
+                
+                // Build comparison section
+                if (hasAvgConf && hasPercentage) {
+                    const avgConfidence = parseFloat(data.average_confidence);
+                    const accuracy = parseFloat(data.percentage);
+                    const difference = avgConfidence - accuracy;
+                    
+                    let differenceClass = '';
+                    let differenceLabel = '';
+                    let differenceIcon = '';
+                    
+                    if (Math.abs(difference) <= 5) {
+                        differenceClass = 'well-calibrated';
+                        differenceLabel = 'Well-calibrated on average ✓';
+                        differenceIcon = '⚖️';
+                    } else if (difference > 5) {
+                        differenceClass = 'overconfident';
+                        differenceLabel = 'Overconfidence';
+                        differenceIcon = '📈';
+                    } else {
+                        differenceClass = 'underconfident';
+                        differenceLabel = 'Underconfidence';
+                        differenceIcon = '📉';
+                    }
+                    
+                    const html = `
+                        <div class="calibration-comparison">
+                            <h3>Confidence vs. Performance</h3>
+                            
+                            <div class="comparison-bar-container">
+                                <div class="comparison-label">
+                                    <span class="comparison-label-text">Average Confidence</span>
+                                    <span class="comparison-label-value" style="color: #4a9eff;">${avgConfidence.toFixed(1)}%</span>
+                                </div>
+                                <div class="comparison-bar-background">
+                                    <div class="comparison-bar-fill comparison-bar-confidence" style="width: ${avgConfidence}%;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="comparison-bar-container">
+                                <div class="comparison-label">
+                                    <span class="comparison-label-text">Actual Accuracy</span>
+                                    <span class="comparison-label-value" style="color: #28a745;">${accuracy.toFixed(1)}%</span>
+                                </div>
+                                <div class="comparison-bar-background">
+                                    <div class="comparison-bar-fill comparison-bar-accuracy" style="width: ${accuracy}%;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="comparison-difference ${differenceClass}">
+                                <div class="comparison-difference-label">Difference</div>
+                                <div class="comparison-difference-value">
+                                    ${difference >= 0 ? '+' : ''}${difference.toFixed(1)} percentage points
+                                </div>
+                                <div class="comparison-difference-interpretation">
+                                    ${differenceIcon} ${differenceLabel}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('results-display').innerHTML = html;
+                    console.log('✓ Comparison section rendered!');
+                } else {
+                    document.getElementById('results-display').innerHTML = '<p style="color: #ff4444;">❌ Missing data for comparison bars</p>';
+                    console.log('✗ Missing data');
+                }
+                
+            } catch (error) {
+                console.error('Error loading results:', error);
+                document.getElementById('data-display').textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        loadAndDisplayResults();
+    </script>
+</body>
+</html>
