@@ -137,7 +137,7 @@ function renderQuestion() {
         `Question ${questionNumber} of ${totalQuestions}${unitInfo}`;
     
     // Update question text
-    document.getElementById('question-text').textContent = question.question_text;
+    document.getElementById('question-text').innerHTML = question.question_text;
     
     // Render options
     const optionsContainer = document.getElementById('options-container');
@@ -164,7 +164,7 @@ function renderQuestion() {
         // Create label
         const label = document.createElement('label');
         label.htmlFor = `option-${index}`;
-        label.textContent = option;
+        label.innerHTML = option;
         
         // Add event listener for selection
         optionDiv.addEventListener('click', () => selectOption(index));
@@ -190,6 +190,12 @@ function renderQuestion() {
     
     // Hide error message
     document.getElementById('error-message').style.display = 'none';
+    
+    // Render math with MathJax
+    if (window.MathJax) {
+        MathJax.typesetPromise([document.getElementById('question-text'), optionsContainer])
+            .catch((err) => console.error('MathJax rendering error:', err));
+    }
 }
 
 
@@ -536,6 +542,12 @@ function renderResults(data) {
     });
     
     resultsDetails.innerHTML = htmlContent;
+    
+    // Render math with MathJax in results
+    if (window.MathJax) {
+        MathJax.typesetPromise([resultsDetails])
+            .catch((err) => console.error('MathJax rendering error:', err));
+    }
 }
 
 

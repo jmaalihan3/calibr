@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Exam Formatting Test</title>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -67,6 +76,12 @@
                     `;
                     container.appendChild(div);
                 });
+                
+                // Render math with MathJax
+                if (window.MathJax) {
+                    MathJax.typesetPromise([container])
+                        .catch((err) => console.error('MathJax rendering error:', err));
+                }
             } catch (error) {
                 document.getElementById('questions').innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
             }
