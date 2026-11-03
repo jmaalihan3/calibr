@@ -433,8 +433,11 @@ function renderResults(data) {
     }
     
     scoreSummary.innerHTML = `
-        <div class="score">${data.score} / ${data.total}</div>
-        <div class="percentage">${data.percentage}%</div>
+        <div>
+            <h3 style="font-size: 1.2rem; color: #e0e0e0; margin-bottom: 15px;">Accuracy</h3>
+            <div class="score">${data.score} / ${data.total}</div>
+            <div class="percentage">${data.percentage}%</div>
+        </div>
         ${calibrationSectionHTML}
     `;
     
