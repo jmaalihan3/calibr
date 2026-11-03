@@ -79,6 +79,7 @@ def submit_exam(exam_id: int, answers: Dict[str, int], confidence: Dict[str, int
         - percentage: Score as percentage (0-100)
         - brier_score: Calibration metric (0=perfect, 1=worst)
         - bias_score: Bias metric (-1 to 1, negative=underconfident, positive=overconfident)
+        - average_confidence: Average confidence across all questions (0-100%)
         - results: List of result objects with question details
     
     Process:
