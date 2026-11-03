@@ -338,6 +338,17 @@ function renderResults(data) {
     // Build calibration section HTML
     let calibrationSectionHTML = '';
     
+    // Average Confidence
+    let averageConfidenceHTML = '';
+    if (data.average_confidence !== null && data.average_confidence !== undefined) {
+        averageConfidenceHTML = `
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">Average Confidence</div>
+                <div style="font-size: 2rem; font-weight: bold; color: #4a9eff;">${data.average_confidence.toFixed(1)}%</div>
+            </div>
+        `;
+    }
+    
     // Brier Score
     let brierScoreHTML = '';
     if (data.brier_score !== null && data.brier_score !== undefined) {
@@ -421,11 +432,12 @@ function renderResults(data) {
         `;
     }
     
-    // Combine both under Calibration header if either exists
-    if (brierScoreHTML || biasScoreHTML) {
+    // Combine all under Calibration header if any exist
+    if (averageConfidenceHTML || brierScoreHTML || biasScoreHTML) {
         calibrationSectionHTML = `
             <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #3a3a3a;">
                 <h3 style="font-size: 1.2rem; color: #e0e0e0; margin-bottom: 15px;">Calibration</h3>
+                ${averageConfidenceHTML}
                 ${brierScoreHTML}
                 ${biasScoreHTML}
             </div>
