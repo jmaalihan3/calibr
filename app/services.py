@@ -159,7 +159,9 @@ def submit_exam(exam_id: int, answers: Dict[str, int], confidence: Dict[str, int
             "confidence": user_conf,
             "calibrated": calibrated,
             "unit": question_data.get("unit"),
-            "unit_name": question_data.get("unit_name")
+            "unit_name": question_data.get("unit_name"),
+            "choices": question_data.get("choices"),  # New: Rich choice data
+            "review": question_data.get("review")     # New: Review metadata
         })
     
     total_questions = len(exam_data["questions"])
@@ -257,7 +259,9 @@ def get_exam_results(exam_id: int) -> Dict:
             "confidence": user_conf,
             "calibrated": calibrated,
             "unit": question_data.get("unit"),
-            "unit_name": question_data.get("unit_name")
+            "unit_name": question_data.get("unit_name"),
+            "choices": question_data.get("choices"),  # New: Rich choice data
+            "review": question_data.get("review")     # New: Review metadata
         })
     
     total_questions = len(exam_data["questions"])

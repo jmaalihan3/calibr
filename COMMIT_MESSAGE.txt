@@ -1,0 +1,82 @@
+Implement revised exam format with expandable results and misconception feedback
+
+This commit implements the revised JSON exam format as specified in
+statcal_exam_json_format_guide.md with the following enhancements:
+
+NEW FEATURES:
+- Expandable/collapsible question cards in results display
+- Rich explanations for each answer choice
+- Misconception feedback displayed ONLY for incorrect answers
+- Learning objectives and related concepts for each question
+- Review titles used as expandable dropdown headers
+
+BACKEND CHANGES:
+- Added choices_json and review_json columns to questions table
+- Created load_revised_exam.py to handle new JSON format
+- Updated db.get_random_questions() to include new fields
+- Updated db.get_exam_with_answers() to include new fields
+- Updated services layer to pass choices and review to frontend
+- Maintained full backward compatibility with old format
+
+FRONTEND CHANGES:
+- Redesigned results from table-based to expandable card layout
+- Each question displays in a collapsible dropdown
+- Color-coded headers (green for correct, red for incorrect)
+- Shows correct answer explanation for all questions
+- Shows misconception explanation only for selected incorrect answer
+- Displays learning objectives and related concepts as tags
+- Added toggleQuestion() function for expand/collapse
+- Responsive design maintained for mobile devices
+
+DATABASE SCHEMA:
+- questions.choices_json: TEXT - Complete choices array with explanations
+- questions.review_json: TEXT - Review metadata (title, objectives, concepts)
+- questions.topic: TEXT - Question topic
+- questions.explanation: TEXT - Legacy field for compatibility
+
+TESTING:
+- All 28 existing tests pass
+- Created comprehensive test suite (test_revised_format.py)
+- Verified API returns new format correctly
+- Verified frontend renders expandable cards
+- Tested edge cases (NULL fields, empty answers, max questions)
+- Verified backward compatibility
+- Verified calibration metrics still work correctly
+
+DOCUMENTATION:
+- REVISED_FORMAT_IMPLEMENTATION.md - Technical details
+- IMPLEMENTATION_COMPLETE.md - Completion summary
+- QUICK_START.md - User guide
+- Test data: statcal_categorical_data_unit_1_exam_structured.md (20 questions)
+
+FILES MODIFIED:
+- app/db.py - Added new columns, updated query methods
+- app/services.py - Pass new fields to results
+- frontend/app.js - Complete results redesign (~150 lines)
+- frontend/styles.css - Added expandable card styles (~250 lines)
+
+FILES CREATED:
+- load_revised_exam.py - Loader for revised format
+- test_revised_format.py - Comprehensive test suite
+- REVISED_FORMAT_IMPLEMENTATION.md
+- IMPLEMENTATION_COMPLETE.md
+- QUICK_START.md
+- frontend/test-new-format.html - Test page
+
+BACKWARD COMPATIBILITY:
+- Old format questions work without new fields
+- Frontend detects format and renders appropriately
+- No breaking changes to existing functionality
+- All existing tests pass
+
+VISUAL FEATURES:
+- Expandable headers with click-to-toggle
+- Color coding (green/red/blue/orange)
+- Visual distinction between correct/incorrect answers
+- Misconception warnings in orange boxes
+- Concept tags in blue
+- Mobile responsive breakpoints
+
+Resolves requirements from: new_feature.txt
+Schema documented in: statcal_exam_json_format_guide.md
+Test data: statcal_categorical_data_unit_1_exam_structured.md

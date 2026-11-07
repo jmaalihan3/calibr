@@ -111,6 +111,10 @@ def init_db():
                 correct_answer INTEGER NOT NULL,
                 unit TEXT,
                 unit_name TEXT,
+                topic TEXT,
+                explanation TEXT,
+                choices_json TEXT,
+                review_json TEXT,
                 created_at {timestamp_type}
             )
         """)
@@ -246,7 +250,7 @@ def get_random_questions(count: int = 5) -> List[Dict]:
         placeholder = "%s" if DATABASE_URL else "?"
         
         cursor.execute(
-            f"SELECT id, question_text, options, unit, unit_name FROM questions ORDER BY RANDOM() LIMIT {placeholder}",
+            f"SELECT id, question_text, options, unit, unit_name, choices_json, review_json FROM questions ORDER BY RANDOM() LIMIT {placeholder}",
             (count,)
         )
         rows = cursor.fetchall()
@@ -265,12 +269,25 @@ def get_random_questions(count: int = 5) -> List[Dict]:
             if isinstance(options, str):
                 options = json.loads(options)
             
+            # Parse choices_json and review_json
+            choices = row_dict.get("choices_json")
+            if choices:
+                if isinstance(choices, str):
+                    choices = json.loads(choices)
+            
+            review = row_dict.get("review_json")
+            if review:
+                if isinstance(review, str):
+                    review = json.loads(review)
+            
             questions.append({
                 "id": row_dict["id"],
                 "question_text": row_dict["question_text"],
                 "options": options,
                 "unit": row_dict.get("unit"),
-                "unit_name": row_dict.get("unit_name")
+                "unit_name": row_dict.get("unit_name"),
+                "choices": choices,  # New: Rich choice data with explanations
+                "review": review     # New: Review metadata
             })
         
         return questions
@@ -393,7 +410,7 @@ def get_exam_with_answers(exam_id: int) -> Optional[Dict]:
         # Get questions with correct answers
         placeholders = ",".join([placeholder] * len(question_ids))
         cursor.execute(
-            f"SELECT id, question_text, options, correct_answer, unit, unit_name FROM questions WHERE id IN ({placeholders})",
+            f"SELECT id, question_text, options, correct_answer, unit, unit_name, choices_json, review_json FROM questions WHERE id IN ({placeholders})",
             question_ids
         )
         question_rows = cursor.fetchall()
@@ -411,12 +428,25 @@ def get_exam_with_answers(exam_id: int) -> Optional[Dict]:
             if isinstance(options, str):
                 options = json.loads(options)
             
+            # Parse choices_json and review_json
+            choices = row_dict.get("choices_json")
+            if choices:
+                if isinstance(choices, str):
+                    choices = json.loads(choices)
+            
+            review = row_dict.get("review_json")
+            if review:
+                if isinstance(review, str):
+                    review = json.loads(review)
+            
             questions[row_dict["id"]] = {
                 "question_text": row_dict["question_text"],
                 "options": options,
                 "correct_answer": row_dict["correct_answer"],
                 "unit": row_dict.get("unit"),
-                "unit_name": row_dict.get("unit_name")
+                "unit_name": row_dict.get("unit_name"),
+                "choices": choices,  # New: Rich choice data with explanations
+                "review": review     # New: Review metadata
             }
         
         # Get user answers and confidence

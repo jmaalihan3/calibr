@@ -1,0 +1,37 @@
+The JSON format for exam questions has been updated. Refer to "statcal_exam_json_format_guide.md".
+The file "statcal_categorical_data_unit_1_exam_structured.md" uses this new format. Update the app using this file for testing.
+
+## Task: Update StatCal Exam Results Feedback
+
+Update the exam results interface to support the revised exam-question JSON format, replacing the previous format.
+
+### 1. JSON compatibility
+- Inspect the revised JSON schema and update the question parsing, data types, and rendering logic to use its new fields.
+- Use the revised schema as the source of truth. Do not assume the old JSON structure.
+- Preserve existing assessment functionality, including answer selection, confidence ratings, scoring, and calibration calculations.
+
+### 2. Question results display
+For each question, display:
+- Question number and descriptive header (`header` or its equivalent in the revised schema).
+- The student's selected answer and original confidence rating.
+- Whether the answer was correct or incorrect.
+- The correct answer and its explanation, regardless of correctness.
+
+If the student answered incorrectly:
+- Additionally display **only the misconception explanation associated with the student's selected incorrect answer**, using the revised JSON fields.
+- Do not display misconception explanations for unselected answers.
+- Label this section "Misconception associated with your answer" rather than asserting that the student necessarily holds that misconception.
+
+### 3. Interface design
+- Present each question's feedback in an expandable/collapsible dropdown, using the descriptive header as its title.
+- Visually distinguish the student's answer, correct answer, and misconception feedback.
+- Keep the original confidence rating visible alongside the question results.
+- Preserve existing results-page summaries, calibration metrics, and navigation.
+- Ensure the interface remains readable and responsive.
+
+### 4. Implementation requirements
+- Map explanations to answer choices using stable identifiers from the revised JSON schema, rather than array positions or hardcoded assumptions.
+- Handle missing optional fields gracefully.
+- Do not modify the exam questions or their explanations.
+- Ensure correct answers never trigger misconception feedback.
+- Verify behavior for correct, incorrect, and unanswered questions, including cases where optional fields are absent.

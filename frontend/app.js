@@ -636,77 +636,189 @@ function renderResults(data) {
                 </div>
                 ${unitComparisonHTML}
                 
-                <table class="results-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Question</th>
-                            <th>Your Answer</th>
-                            <th>Correct Answer</th>
-                            <th>Confidence</th>
-                            <th>Calibrated?</th>
-                            <th>Result</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <div class="questions-container">
         `;
         
         unitResults.forEach((result) => {
             const questionNum = result.originalIndex + 1;
-            const userAnswer = result.user_answer !== null 
-                ? result.options[result.user_answer] 
-                : 'Not answered';
-            const correctAnswer = result.options[result.correct_answer];
             const resultClass = result.is_correct ? 'result-correct' : 'result-incorrect';
             const resultIcon = result.is_correct ? '✓' : '✗';
+            const resultText = result.is_correct ? 'Correct' : 'Incorrect';
+            
+            // Determine header text (use review.title if available, otherwise a default)
+            let headerText = `Question ${questionNum}`;
+            if (result.review && result.review.title) {
+                headerText = `Q${questionNum}: ${result.review.title}`;
+            }
             
             // Confidence display
             let confidenceText = 'N/A';
             let confidenceColor = '#888';
             if (result.confidence !== null && result.confidence !== undefined) {
                 confidenceText = `${result.confidence}%`;
-                // Color based on confidence level
                 if (result.confidence >= 70) {
-                    confidenceColor = '#28a745'; // Green for high confidence
+                    confidenceColor = '#28a745';
                 } else if (result.confidence >= 40) {
-                    confidenceColor = '#4a9eff'; // Blue for medium confidence
+                    confidenceColor = '#4a9eff';
                 } else {
-                    confidenceColor = '#ff9800'; // Orange for low confidence
+                    confidenceColor = '#ff9800';
                 }
             }
             
-            // Calibration display
-            let calibrationText = 'N/A';
-            let calibrationColor = '#888';
-            if (result.calibrated !== null && result.calibrated !== undefined) {
-                if (result.calibrated) {
-                    calibrationText = '✓ Match';
-                    calibrationColor = '#28a745';
-                } else {
-                    calibrationText = '✗ Mismatch';
-                    calibrationColor = '#ff4444';
+            // Build the question feedback content
+            let feedbackHTML = '';
+            
+            // Check if we have the new format (choices with explanations)
+            if (result.choices && Array.isArray(result.choices)) {
+                // New format with rich explanations
+                
+                // Find user's selected choice and correct choice
+                const userChoice = result.user_answer !== null 
+                    ? result.choices[result.user_answer] 
+                    : null;
+                const correctChoice = result.choices[result.correct_answer];
+                
+                feedbackHTML = `
+                    <div class="question-feedback-content">
+                        <div class="feedback-section">
+                            <h4>Question</h4>
+                            <p>${result.question_text}</p>
+                        </div>
+                        
+                        <div class="feedback-section">
+                            <h4>Your Answer</h4>
+                            <div class="answer-box ${result.is_correct ? 'correct-answer-box' : 'incorrect-answer-box'}">
+                                <div class="answer-text">
+                                    ${userChoice ? userChoice.text : 'Not answered'}
+                                </div>
+                                <div class="answer-meta">
+                                    <span class="result-badge ${resultClass}">
+                                        ${resultIcon} ${resultText}
+                                    </span>
+                                    <span class="confidence-badge" style="color: ${confidenceColor};">
+                                        Confidence: ${confidenceText}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="feedback-section">
+                            <h4>Correct Answer</h4>
+                            <div class="answer-box correct-answer-box">
+                                <div class="answer-text">
+                                    ${correctChoice.text}
+                                </div>
+                            </div>
+                            <div class="explanation-box">
+                                <strong>Explanation:</strong> ${correctChoice.explanation}
+                            </div>
+                        </div>
+                `;
+                
+                // Show misconception feedback only if answered incorrectly
+                if (!result.is_correct && userChoice && userChoice.misconception_id) {
+                    feedbackHTML += `
+                        <div class="feedback-section misconception-section">
+                            <h4>Misconception Associated with Your Answer</h4>
+                            <div class="misconception-box">
+                                ${userChoice.explanation}
+                            </div>
+                            <p class="misconception-note">
+                                Note: This describes a common misunderstanding associated with this answer choice,
+                                not necessarily a statement of your beliefs.
+                            </p>
+                        </div>
+                    `;
                 }
+                
+                // Show learning objective and related concepts if available
+                if (result.review) {
+                    if (result.review.learning_objective) {
+                        feedbackHTML += `
+                            <div class="feedback-section">
+                                <h4>Learning Objective</h4>
+                                <p>${result.review.learning_objective}</p>
+                            </div>
+                        `;
+                    }
+                    
+                    if (result.review.related_concepts && result.review.related_concepts.length > 0) {
+                        const conceptsHTML = result.review.related_concepts
+                            .map(concept => `<span class="concept-tag">${concept}</span>`)
+                            .join('');
+                        feedbackHTML += `
+                            <div class="feedback-section">
+                                <h4>Related Concepts</h4>
+                                <div class="concepts-container">
+                                    ${conceptsHTML}
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                
+                feedbackHTML += `</div>`;
+                
+            } else {
+                // Fallback to old format (for backwards compatibility)
+                const userAnswer = result.user_answer !== null 
+                    ? result.options[result.user_answer] 
+                    : 'Not answered';
+                const correctAnswer = result.options[result.correct_answer];
+                
+                feedbackHTML = `
+                    <div class="question-feedback-content">
+                        <div class="feedback-section">
+                            <h4>Question</h4>
+                            <p>${result.question_text}</p>
+                        </div>
+                        
+                        <div class="feedback-section">
+                            <h4>Your Answer</h4>
+                            <div class="answer-box ${result.is_correct ? 'correct-answer-box' : 'incorrect-answer-box'}">
+                                ${userAnswer}
+                            </div>
+                            <div class="answer-meta">
+                                <span class="result-badge ${resultClass}">
+                                    ${resultIcon} ${resultText}
+                                </span>
+                                <span class="confidence-badge" style="color: ${confidenceColor};">
+                                    Confidence: ${confidenceText}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="feedback-section">
+                            <h4>Correct Answer</h4>
+                            <div class="answer-box correct-answer-box">
+                                ${correctAnswer}
+                            </div>
+                        </div>
+                    </div>
+                `;
             }
+            
+            // Generate unique ID for accordion
+            const accordionId = `question-${questionNum}`;
             
             htmlContent += `
-                <tr>
-                    <td>${questionNum}</td>
-                    <td>${result.question_text}</td>
-                    <td>${userAnswer}</td>
-                    <td>${correctAnswer}</td>
-                    <td style="color: ${confidenceColor};">${confidenceText}</td>
-                    <td style="color: ${calibrationColor};">${calibrationText}</td>
-                    <td class="${resultClass}">
-                        <span class="result-icon">${resultIcon}</span>
-                        ${result.is_correct ? 'Correct' : 'Incorrect'}
-                    </td>
-                </tr>
+                <div class="question-card">
+                    <div class="question-header ${resultClass}" onclick="toggleQuestion('${accordionId}')">
+                        <div class="question-header-content">
+                            <span class="result-icon">${resultIcon}</span>
+                            <span class="question-title">${headerText}</span>
+                        </div>
+                        <span class="expand-icon" id="${accordionId}-icon">▼</span>
+                    </div>
+                    <div class="question-content" id="${accordionId}" style="display: none;">
+                        ${feedbackHTML}
+                    </div>
+                </div>
             `;
         });
         
         htmlContent += `
-                    </tbody>
-                </table>
+                </div>
             </div>
         `;
     });
@@ -829,6 +941,28 @@ function showError(message) {
     errorDiv.textContent = message;
     errorDiv.style.display = 'block';
 }
+
+
+/**
+ * Toggle the visibility of a question's feedback content.
+ * 
+ * @param {string} questionId - ID of the question element to toggle
+ */
+function toggleQuestion(questionId) {
+    const content = document.getElementById(questionId);
+    const icon = document.getElementById(`${questionId}-icon`);
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.textContent = '▲';
+    } else {
+        content.style.display = 'none';
+        icon.textContent = '▼';
+    }
+}
+
+// Make toggleQuestion globally accessible
+window.toggleQuestion = toggleQuestion;
 
 
 // Initialize app when DOM is ready

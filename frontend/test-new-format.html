@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test New Exam Format</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']]
+            },
+            startup: {
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady();
+                }
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Test New Exam Results Format</h1>
+            <p style="color: #888;">This page tests the new expandable feedback display</p>
+        </header>
+
+        <section class="section active">
+            <div class="card">
+                <h2>Quick Test</h2>
+                <p>Click the button to take a 2-question test and see the new results format.</p>
+                <button id="test-btn" class="btn btn-primary">Start Quick Test</button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Simple test script
+        let examId = null;
+        let questions = [];
+
+        document.getElementById('test-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('test-btn');
+            btn.disabled = true;
+            btn.textContent = 'Loading...';
+
+            try {
+                // Start exam with 2 questions
+                const startResponse = await fetch('/api/exams/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ num_questions: 2 })
+                });
+                const startData = await startResponse.json();
+                examId = startData.exam_id;
+                questions = startData.questions;
+
+                console.log('Started exam:', examId);
+                console.log('Questions:', questions);
+
+                // Auto-answer all questions (first option, 75% confidence)
+                const answers = {};
+                const confidence = {};
+                questions.forEach(q => {
+                    answers[q.id] = 0; // Select first option
+                    confidence[q.id] = 75; // 75% confidence
+                });
+
+                // Submit exam
+                const submitResponse = await fetch(`/api/exams/${examId}/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ answers, confidence })
+                });
+                const results = await submitResponse.json();
+
+                console.log('Results:', results);
+
+                // Redirect to main app results by setting up the state
+                window.location.href = '/?test=true';
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Test failed: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = 'Start Quick Test';
+            }
+        });
+    </script>
+</body>
+</html>
