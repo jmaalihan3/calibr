@@ -77,7 +77,7 @@ def test_start_exam(mock_db, mock_questions):
     
     # Verify database calls
     mock_db.get_random_questions.assert_called_once_with(count=2)
-    mock_db.create_exam.assert_called_once_with([1, 2])
+    mock_db.create_exam.assert_called_once_with([1, 2], user_id=None)
 
 
 @patch('app.services.db')

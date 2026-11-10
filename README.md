@@ -4,11 +4,14 @@ A web-based academic assessment application built with FastAPI backend and vanil
 
 ## Features
 
-- Random exam generation with 5 multiple-choice questions
-- Single-page application with no page refreshes
-- Dark theme UI for reduced eye strain
-- Immediate feedback with score and correct answers
-- SQLite database for persistent storage
+- **User Authentication:** Secure registration and login with Argon2id password hashing
+- **Session Management:** Persistent sessions with HttpOnly cookies and CSRF protection
+- **Random Exam Generation:** Customizable number of questions (1-5)
+- **Confidence Tracking:** Rate your confidence (0-100%) for each answer
+- **Calibration Metrics:** Brier Score and Bias Score to measure prediction accuracy
+- **Anonymous Mode:** Take exams without authentication (optional)
+- **Dark Theme UI:** Reduced eye strain with modern interface
+- **Persistent Storage:** SQLite (local) or PostgreSQL (production)
 
 ## Tech Stack
 
@@ -56,15 +59,48 @@ zcalib-project/
 pip install -r requirements.txt
 ```
 
-### 2. Run Tests
+### 2. Configure Environment (Optional)
+
+For local development, the app works with auto-generated secrets. For production:
+
+```bash
+# Copy example environment file
+cp .env.example .env
+
+# Generate secure secrets
+python -c "import secrets; print('SECRET_KEY=' + secrets.token_urlsafe(32)); print('CSRF_SECRET=' + secrets.token_urlsafe(32))"
+
+# Add secrets to .env file
+```
+
+**Environment Variables:**
+- `SECRET_KEY` - Session signing secret (auto-generated in dev)
+- `CSRF_SECRET` - CSRF token secret (auto-generated in dev)
+- `SESSION_TIMEOUT_DAYS` - Session validity period (default: 7 days)
+- `RATE_LIMIT_LOGIN` - Login attempts per minute (default: 5)
+- `RATE_LIMIT_REGISTER` - Registration attempts per minute (default: 3)
+- `ENVIRONMENT` - `development` or `production`
+
+### 3. Run Tests
 
 ```bash
 pytest tests/ -v
 ```
 
-All 28 tests should pass.
+All 66 tests should pass:
+- 28 original tests (database, services, API)
+- 38 new authentication tests (auth utilities, auth API)
 
-### 3. Start the Server
+**Test Coverage:**
+- ✅ Password hashing and verification
+- ✅ Session token generation and validation
+- ✅ CSRF protection
+- ✅ Rate limiting
+- ✅ User registration and login
+- ✅ Cross-user data isolation
+- ✅ Exam flow (anonymous and authenticated)
+
+### 4. Start the Server
 
 ```bash
 uvicorn app.main:app --reload --port 8000
@@ -72,10 +108,11 @@ uvicorn app.main:app --reload --port 8000
 
 The server will:
 - Initialize the SQLite database
+- Create users, sessions, questions, exams, and exam_answers tables
 - Populate 10 sample questions
 - Start on http://localhost:8000
 
-### 4. Access the Application
+### 5. Access the Application
 
 Open your browser to:
 - **Frontend**: http://localhost:8000
@@ -84,7 +121,100 @@ Open your browser to:
 
 ## API Endpoints
 
-### POST /api/exams/start
+### Authentication
+
+#### POST /api/auth/register
+Register a new user account.
+
+**Request:**
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePass123!"
+}
+```
+
+**Password Requirements:**
+- At least 8 characters
+- One uppercase letter
+- One lowercase letter
+- One digit
+- One special character
+
+**Response:** 201 Created
+```json
+{
+  "message": "Registration successful",
+  "detail": "Please log in with your credentials"
+}
+```
+
+#### POST /api/auth/login
+Authenticate and create session.
+
+**Request:**
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePass123!"
+}
+```
+
+**Response:** 200 OK (sets session cookie)
+```json
+{
+  "user": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "email": "user@example.com",
+    "created_at": "2026-11-09T17:30:00",
+    "email_verified": false
+  },
+  "csrf_token": "session_id:timestamp:signature",
+  "message": "Login successful"
+}
+```
+
+#### POST /api/auth/logout
+Logout and revoke session (requires CSRF token header).
+
+**Headers:**
+```
+X-CSRF-Token: <csrf_token_from_login>
+```
+
+**Response:** 200 OK
+```json
+{
+  "message": "Logout successful"
+}
+```
+
+#### GET /api/auth/me
+Get current user profile (requires authentication).
+
+**Response:** 200 OK
+```json
+{
+  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "email": "user@example.com",
+  "created_at": "2026-11-09T17:30:00",
+  "email_verified": false
+}
+```
+
+#### GET /api/auth/csrf-token
+Get CSRF token for authenticated requests.
+
+**Response:** 200 OK
+```json
+{
+  "csrf_token": "session_id:timestamp:signature"
+}
+```
+
+### Exams
+
+#### POST /api/exams/start
 Start a new exam with random questions.
 
 **Request:**
@@ -229,18 +359,32 @@ Requires JavaScript enabled.
 
 ## Known Limitations
 
-1. **No authentication** - Anyone can take exams
-2. **No persistence on refresh** - Exam progress lost if page refreshed
-3. **No security** - Correct answers visible in browser DevTools
-4. **Single-user** - SQLite not suitable for concurrent users
-5. **No exam history** - Users can't see past exams
+1. ~~**No authentication**~~ ✅ **IMPLEMENTED** - Users can now register and login
+2. **No persistence on refresh** - Exam progress lost if page refreshed (in-progress exams)
+3. **No security** - Correct answers visible in browser DevTools (by design for immediate feedback)
+4. **Single-instance rate limiting** - Rate limits reset on server restart
+5. **No exam history** - Users can't see past exams yet (Phase 2)
 
-These are acceptable for a prototype. Production would need:
-- User authentication and authorization
-- Server-side session management
-- Secure answer validation
-- Production database (PostgreSQL)
-- Exam history and analytics
+### Phase 1 Complete ✅
+- ✅ User registration and authentication
+- ✅ Secure password hashing (Argon2id)
+- ✅ Session management with HttpOnly cookies
+- ✅ CSRF protection
+- ✅ Rate limiting (basic implementation)
+- ✅ Database schema with users and sessions
+
+### Phase 2 Complete ✅
+- ✅ User-linked exam history
+- ✅ View past exam results
+- ✅ Aggregate statistics (accuracy, confidence, Brier score)
+- ✅ Exam history pagination
+- ✅ Anonymous mode still supported
+
+### Coming in Phase 3
+- Historical trend tracking
+- Topic-based performance breakdown
+- Calibration visualization
+- Comparative statistics
 
 ## Future Enhancements
 

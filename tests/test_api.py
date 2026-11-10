@@ -59,7 +59,7 @@ def test_start_exam_success(client, mock_services):
     assert len(data['questions']) == 1
     
     # Verify service was called
-    mock_services.start_exam.assert_called_once_with(num_questions=5)
+    mock_services.start_exam.assert_called_once_with(num_questions=5, user_id=None)
 
 
 def test_start_exam_default_questions(client, mock_services):
@@ -79,7 +79,7 @@ def test_start_exam_default_questions(client, mock_services):
     assert response.status_code == 200
     
     # Verify default count of 5 was used
-    mock_services.start_exam.assert_called_once_with(num_questions=5)
+    mock_services.start_exam.assert_called_once_with(num_questions=5, user_id=None)
 
 
 def test_start_exam_error(client, mock_services):

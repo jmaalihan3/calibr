@@ -1,37 +1,94 @@
-The JSON format for exam questions has been updated. Refer to "statcal_exam_json_format_guide.md".
-The file "statcal_categorical_data_unit_1_exam_structured.md" uses this new format. Update the app using this file for testing.
+Implement a persistent user statistics, allowing users to monitor assessment performance and metacognitive calibration over time.
+## Dashboard Statistics
 
-## Task: Update StatCal Exam Results Feedback
+Display five cumulative statistics across all completed assessments:
 
-Update the exam results interface to support the revised exam-question JSON format, replacing the previous format.
+1. **Brier Score:** Mean squared difference between confidence (0–1) and correctness (0 or 1). Lower is better.
+2. **Calibration Bias:** Average confidence minus answer accuracy, expressed in percentage points. Positive indicates overconfidence; negative indicates underconfidence.
+3. **Answer Accuracy:** Percentage of correctly answered questions.
+4. **Average Confidence:** Mean reported confidence (0–100%).
+5. **Assessments Completed:** Total number of completed assessments.
 
-### 1. JSON compatibility
-- Inspect the revised JSON schema and update the question parsing, data types, and rendering logic to use its new fields.
-- Use the revised schema as the source of truth. Do not assume the old JSON structure.
-- Preserve existing assessment functionality, including answer selection, confidence ratings, scoring, and calibration calculations.
+Calculate cumulative metrics using all valid question-level responses, weighted equally by question rather than averaging assessment-level metrics.
 
-### 2. Question results display
-For each question, display:
-- Question number and descriptive header (`header` or its equivalent in the revised schema).
-- The student's selected answer and original confidence rating.
-- Whether the answer was correct or incorrect.
-- The correct answer and its explanation, regardless of correctness.
+## 3. Longitudinal Tracking
 
-If the student answered incorrectly:
-- Additionally display **only the misconception explanation associated with the student's selected incorrect answer**, using the revised JSON fields.
-- Do not display misconception explanations for unselected answers.
-- Label this section "Misconception associated with your answer" rather than asserting that the student necessarily holds that misconception.
+Implement historical charts showing statistics across completed assessments.
 
-### 3. Interface design
-- Present each question's feedback in an expandable/collapsible dropdown, using the descriptive header as its title.
-- Visually distinguish the student's answer, correct answer, and misconception feedback.
-- Keep the original confidence rating visible alongside the question results.
-- Preserve existing results-page summaries, calibration metrics, and navigation.
-- Ensure the interface remains readable and responsive.
+- **Calibration:** Brier score and calibration bias.
+- **Performance:** Answer accuracy and average confidence.
+- Use assessment completion dates or chronological assessment numbers on the horizontal axis.
+- Clearly label axes, units, and metrics.
+- Provide a simple way to switch between calibration and performance charts.
 
-### 4. Implementation requirements
-- Map explanations to answer choices using stable identifiers from the revised JSON schema, rather than array positions or hardcoded assumptions.
-- Handle missing optional fields gracefully.
-- Do not modify the exam questions or their explanations.
-- Ensure correct answers never trigger misconception feedback.
-- Verify behavior for correct, incorrect, and unanswered questions, including cases where optional fields are absent.
+## 4. Assessment History
+
+Display a chronological table of completed assessments, showing:
+
+- Assessment name and completion date
+- Answer accuracy
+- Average confidence
+- Brier score
+- Calibration bias
+
+Each assessment should link to its existing results page, including question-level feedback.
+
+Display the most recent assessments first.
+
+## 5. Persistence and Backend
+
+Inspect the existing database schema and assessment submission workflow before modifying anything.
+
+- Reuse existing persisted assessment and question-response data wherever possible.
+- Ensure completed assessments retain their question-level correctness, confidence ratings, identifiers, and completion timestamps.
+- Associate records with the existing user or participant identifier.
+- Create or modify database tables only where necessary.
+- Implement REST API endpoints for cumulative statistics, historical trends, and assessment history.
+- Exclude incomplete assessments from statistics.
+- Avoid double-counting submissions or attempts.
+- Preserve compatibility with both SQLite and PostgreSQL.
+
+Derive aggregate statistics from persisted question-level data. Avoid storing redundant cumulative statistics unless necessary for performance.
+
+## 6. Frontend Design
+
+Create a dedicated **My Statistics** dashboard accessible from the existing application navigation.
+
+Organize it into three sections:
+
+1. **Overview:** Five summary statistics displayed in compact cards.
+2. **Performance History:** Interactive or switchable charts showing longitudinal trends.
+3. **Assessment History:** Chronological table with links to individual results.
+
+Include concise explanations of Brier score and calibration bias, using tooltips or short descriptions.
+
+Handle users with no completed assessments gracefully.
+
+## 7. Testing and Validation
+
+Add tests verifying:
+
+- Correct Brier score, bias, accuracy, and average confidence calculations.
+- Correct aggregation across assessments with different numbers of questions.
+- Correct handling of incomplete assessments and missing or invalid data.
+- Correct chronological ordering.
+- Correct persistence across application restarts.
+- No duplicate counting of completed assessment submissions.
+- Compatibility with SQLite and PostgreSQL.
+
+## 8. Implementation Constraints
+
+- Do not modify existing assessment behavior or feedback unnecessarily.
+- Preserve existing data and functionality.
+- Prefer minimal, maintainable changes.
+
+## 9. Expected Workflow
+
+1. Inspect the existing codebase, database schema, and assessment results implementation.
+2. Identify existing functionality that can be reused.
+3. Briefly describe the proposed changes and affected files.
+4. Implement the backend, frontend, and tests.
+5. Run relevant tests and report results.
+6. Summarize modified files, new endpoints, database changes, and any remaining limitations.
+
+**Primary objective:** Deliver a functional, persistent, and visually consistent Phase 1 statistics dashboard with minimal architectural changes.
