@@ -384,7 +384,12 @@ def init_db():
             if not choices_json:
                 print("Detected old question format, reloading with StatCal questions...")
                 needs_reload = True
-                # Clear old questions
+                # Clear old data (must delete in order due to foreign keys)
+                print("Clearing exam_answers...")
+                cursor.execute("DELETE FROM exam_answers")
+                print("Clearing exams...")
+                cursor.execute("DELETE FROM exams")
+                print("Clearing questions...")
                 cursor.execute("DELETE FROM questions")
                 conn.commit()
                 question_count = 0
