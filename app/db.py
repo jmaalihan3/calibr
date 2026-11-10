@@ -5,11 +5,14 @@ This module handles:
 - Database initialization and schema creation
 - Question bank storage and retrieval
 - Exam submission and result storage
+- User authentication and session management
 
-Architecture: Three-table design
+Architecture: Five-table design
 - questions: Stores reusable question bank
 - exams: Tracks exam instances (one per user attempt)
 - exam_answers: Stores user responses (many-to-one with exams)
+- users: User account information
+- sessions: Active user sessions
 
 Database Selection:
 - If DATABASE_URL env var is set → PostgreSQL (production)
@@ -21,7 +24,8 @@ import os
 from contextlib import contextmanager
 from typing import List, Dict, Optional
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
+import uuid
 
 # Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL")  # Set by Render for PostgreSQL
@@ -75,10 +79,12 @@ def init_db():
     """
     Initialize database schema and populate with sample questions.
     
-    Creates three tables:
+    Creates five tables:
     - questions: The question bank (id, question_text, options, correct_answer, created_at)
-    - exams: Tracks exam instances (id, question_ids, created_at, completed_at, score)
+    - exams: Tracks exam instances (id, question_ids, created_at, completed_at, score, user_id)
     - exam_answers: Stores user answers (id, exam_id, question_id, user_answer, confidence)
+    - users: User accounts (id, email, password_hash, created_at, email_verified)
+    - sessions: Active sessions (id, user_id, token_hash, created_at, expires_at, revoked)
     
     Side effects:
         - Creates tables if they don't exist
@@ -94,13 +100,67 @@ def init_db():
         if DATABASE_URL:
             # PostgreSQL syntax
             id_type = "SERIAL PRIMARY KEY"
+            uuid_type = "UUID PRIMARY KEY DEFAULT gen_random_uuid()"
             json_type = "JSONB"
             timestamp_type = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+            text_type = "TEXT"
         else:
             # SQLite syntax
             id_type = "INTEGER PRIMARY KEY AUTOINCREMENT"
+            uuid_type = "TEXT PRIMARY KEY"  # Store UUID as TEXT in SQLite
             json_type = "TEXT"
             timestamp_type = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+            text_type = "TEXT"
+        
+        # Users table
+        cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS users (
+                id {uuid_type if not DATABASE_URL else 'UUID PRIMARY KEY DEFAULT gen_random_uuid()'},
+                email {text_type} NOT NULL UNIQUE,
+                password_hash {text_type} NOT NULL,
+                created_at {timestamp_type},
+                email_verified BOOLEAN DEFAULT FALSE,
+                is_active BOOLEAN DEFAULT TRUE
+            )
+        """)
+        
+        # Create case-insensitive email index
+        if DATABASE_URL:
+            cursor.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower 
+                ON users (LOWER(email))
+            """)
+        else:
+            cursor.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower 
+                ON users (email COLLATE NOCASE)
+            """)
+        
+        # Sessions table
+        cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS sessions (
+                id {uuid_type if not DATABASE_URL else 'UUID PRIMARY KEY DEFAULT gen_random_uuid()'},
+                user_id {text_type if not DATABASE_URL else 'UUID'} NOT NULL,
+                token_hash {text_type} NOT NULL UNIQUE,
+                created_at {timestamp_type},
+                expires_at TIMESTAMP NOT NULL,
+                revoked BOOLEAN DEFAULT FALSE,
+                last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+        """)
+        
+        # Create index on token_hash for fast lookup
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_sessions_token_hash 
+            ON sessions (token_hash)
+        """)
+        
+        # Create index on user_id for session cleanup
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_sessions_user_id 
+            ON sessions (user_id)
+        """)
         
         # Question bank table
         cursor.execute(f"""
@@ -119,15 +179,23 @@ def init_db():
             )
         """)
         
-        # Exams table
+        # Exams table (with user_id for authenticated users)
         cursor.execute(f"""
             CREATE TABLE IF NOT EXISTS exams (
                 id {id_type},
                 question_ids {json_type} NOT NULL,
                 created_at {timestamp_type},
                 completed_at TIMESTAMP,
-                score INTEGER
+                score INTEGER,
+                user_id {text_type if not DATABASE_URL else 'UUID'},
+                FOREIGN KEY (user_id) REFERENCES users (id)
             )
+        """)
+        
+        # Create index on user_id for exam history queries
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_exams_user_id 
+            ON exams (user_id)
         """)
         
         # Exam answers table
@@ -293,18 +361,19 @@ def get_random_questions(count: int = 5) -> List[Dict]:
         return questions
 
 
-def create_exam(question_ids: List[int]) -> int:
+def create_exam(question_ids: List[int], user_id: str = None) -> int:
     """
     Create a new exam instance.
     
     Args:
         question_ids: List of question IDs for this exam
+        user_id: Optional user ID to link exam to (None for anonymous)
     
     Returns:
         The newly created exam ID
     
     Side effects:
-        Inserts row into exams table with current timestamp
+        Inserts row into exams table with current timestamp and optional user_id
     
     Used by: services.py start_exam()
     """
@@ -314,10 +383,16 @@ def create_exam(question_ids: List[int]) -> int:
         # Use appropriate parameter placeholder
         placeholder = "%s" if DATABASE_URL else "?"
         
-        cursor.execute(
-            f"INSERT INTO exams (question_ids) VALUES ({placeholder})",
-            (json.dumps(question_ids),)
-        )
+        if user_id:
+            cursor.execute(
+                f"INSERT INTO exams (question_ids, user_id) VALUES ({placeholder}, {placeholder})",
+                (json.dumps(question_ids), user_id)
+            )
+        else:
+            cursor.execute(
+                f"INSERT INTO exams (question_ids) VALUES ({placeholder})",
+                (json.dumps(question_ids),)
+            )
         
         # Get last inserted ID (different for SQLite vs PostgreSQL)
         if DATABASE_URL:
@@ -503,3 +578,669 @@ def update_exam_score(exam_id: int, score: int):
             f"UPDATE exams SET score = {placeholder}, completed_at = {placeholder} WHERE id = {placeholder}",
             (score, datetime.now().isoformat(), exam_id)
         )
+
+
+# ============================================================================
+# User Management Functions
+# ============================================================================
+
+def create_user(email: str, password_hash: str) -> str:
+    """
+    Create a new user account.
+    
+    Args:
+        email: User email address (must be unique)
+        password_hash: Argon2id password hash
+    
+    Returns:
+        User UUID as string
+    
+    Raises:
+        Exception if email already exists
+    
+    Used by: auth router register endpoint
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+        placeholder = "%s" if DATABASE_URL else "?"
+        
+        # Generate UUID for SQLite (PostgreSQL does it automatically)
+        user_id = str(uuid.uuid4()) if not DATABASE_URL else None
+        
+        try:
+            if DATABASE_URL:
+                # PostgreSQL: Let database generate UUID
+                cursor.execute(
+                    f"INSERT INTO users (email, password_hash) VALUES ({placeholder}, {placeholder}) RETURNING id",
+                    (email.lower(), password_hash)
+                )
+                result = cursor.fetchone()
+                return str(result['id'])
+            else:
+                # SQLite: Generate UUID manually
+                cursor.execute(
+                    f"INSERT INTO users (id, email, password_hash) VALUES ({placeholder}, {placeholder}, {placeholder})",
+                    (user_id, email.lower(), password_hash)
+                )
+                return user_id
+        except Exception as e:
+            # Check if it's a duplicate email error
+            error_msg = str(e).lower()
+            if 'unique' in error_msg or 'duplicate' in error_msg:
+                raise ValueError("Email already registered")
+            raise
+
+
+def get_user_by_email(email: str) -> Optional[Dict]:
+    """
+    Retrieve user by email address.
+    
+    Args:
+        email: User email address (case-insensitive)
+    
+    Returns:
+        User dict with id, email, password_hash, created_at, email_verified
+        Returns None if user not found
+    
+    Used by: auth router login endpoint
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+        placeholder = "%s" if DATABASE_URL else "?"
+        
+        cursor.execute(
+            f"SELECT id, email, password_hash, created_at, email_verified, is_active FROM users WHERE LOWER(email) = LOWER({placeholder})",
+            (email,)
+        )
+        row = cursor.fetchone()
+        
+        if not row:
+            return None
+        
+        # Convert to dict for uniform access
+        if DATABASE_URL:
+            return dict(row)
+        else:
+            return {key: row[key] for key in row.keys()}
+
+
+def get_user_by_id(user_id: str) -> Optional[Dict]:
+    """
+    Retrieve user by ID.
+    
+    Args:
+        user_id: User UUID
+    
+    Returns:
+        User dict (without password_hash)
+        Returns None if user not found
+    
+    Used by: session validation
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+        placeholder = "%s" if DATABASE_URL else "?"
+        
+        cursor.execute(
+            f"SELECT id, email, created_at, email_verified, is_active FROM users WHERE id = {placeholder}",
+            (user_id,)
+        )
+        row = cursor.fetchone()
+        
+        if not row:
+            return None
+        
+        # Convert to dict for uniform access
+        if DATABASE_URL:
+            return dict(row)
+        else:
+            return {key: row[key] for key in row.keys()}
+
+
+# ============================================================================
+# Session Management Functions
+# ============================================================================
+
+def create_session(user_id: str, token_hash: str, expires_at: datetime) -> str:
+    """
+    Create a new user session.
+    
+    Args:
+        user_id: User UUID
+        token_hash: SHA-256 hash of session token
+        expires_at: Session expiration timestamp
+    
+    Returns:
+        Session UUID as string
+    
+    Used by: auth router login endpoint
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+        placeholder = "%s" if DATABASE_URL else "?"
+        
+        # Generate UUID for SQLite (PostgreSQL does it automatically)
+        session_id = str(uuid.uuid4()) if not DATABASE_URL else None
+        
+        if DATABASE_URL:
+            # PostgreSQL: Let database generate UUID
+            cursor.execute(
+                f"INSERT INTO sessions (user_id, token_hash, expires_at) VALUES ({placeholder}, {placeholder}, {placeholder}) RETURNING id",
+                (user_id, token_hash, expires_at.isoformat())
+            )
+            result = cursor.fetchone()
+            return str(result['id'])
+        else:
+            # SQLite: Generate UUID manually
+            cursor.execute(
+                f"INSERT INTO sessions (id, user_id, token_hash, expires_at) VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder})",
+                (session_id, user_id, token_hash, expires_at.isoformat())
+            )
+            return session_id
+
+
+def get_session_by_token(token: str) -> Optional[Dict]:
+    """
+    Retrieve session by raw token.
+    
+    Args:
+        token: Raw session token (will be hashed for lookup)
+    
+    Returns:
+        Session dict with id, user_id, created_at, expires_at, revoked
+        Returns None if session not found or invalid
+    
+    Used by: auth dependencies for validation
+    """
+    from app.auth import hash_token
+    
+    token_hash = hash_token(token)
+    
+    with get_db() as conn:
+        cursor = conn.cursor()
+        placeholder = "%s" if DATABASE_URL else "?"
+        
+        cursor.execute(
+            f"SELECT id, user_id, token_hash, created_at, expires_at, revoked FROM sessions WHERE token_hash = {placeholder}",
+            (token_hash,)
+        )
+        row = cursor.fetchone()
+        
+        if not row:
+            return None
+        
+        # Convert to dict for uniform access
+        if DATABASE_URL:
+            return dict(row)
+        else:
+            return {key: row[key] for key in row.keys()}
+
+
+def validate_session(token: str) -> Optional[Dict]:
+    """
+    Validate session token and return user data.
+    
+    Checks:
+    - Session exists
+    - Not revoked
+    - Not expired
+    - User is active
+    
+    Updates last_activity timestamp if valid.
+    
+    Args:
+        token: Raw session token
+    
+    Returns:
+        User dict if session valid, None otherwise
+    
+    Used by: get_current_user dependency
+    """
+    session = get_session_by_token(token)
+    
+    if not session:
+        return None
+    
+    # Check if revoked
+    if session['revoked']:
+        return None
+    
+    # Check if expired
+    expires_at = session['expires_at']
+    if isinstance(expires_at, str):
+        expires_at = datetime.fromisoformat(expires_at)
+    
+    if datetime.now() >= expires_at:
+        return None
+    
+    # Get user data
+    user = get_user_by_id(session['user_id'])
+    
+    if not user or not user.get('is_active', True):
+        return None
+    
+    # Update last activity
+    update_session_activity(session['id'])
+    
+    return user
+
+
+def update_session_activity(session_id: str):
+    """
+    Update session last_activity timestamp.
+    
+    Args:
+        session_id: Session UUID
+    
+    Used by: validate_session
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+        placeholder = "%s" if DATABASE_URL else "?"
+        
+        cursor.execute(
+            f"UPDATE sessions SET last_activity = {placeholder} WHERE id = {placeholder}",
+            (datetime.now().isoformat(), session_id)
+        )
+
+
+def revoke_session(token: str):
+    """
+    Revoke a session (logout).
+    
+    Args:
+        token: Raw session token
+    
+    Used by: auth router logout endpoint
+    """
+    from app.auth import hash_token
+    
+    token_hash = hash_token(token)
+    
+    with get_db() as conn:
+        cursor = conn.cursor()
+        placeholder = "%s" if DATABASE_URL else "?"
+        
+        cursor.execute(
+            f"UPDATE sessions SET revoked = TRUE WHERE token_hash = {placeholder}",
+            (token_hash,)
+        )
+
+
+def revoke_all_user_sessions(user_id: str):
+    """
+    Revoke all sessions for a user.
+    
+    Args:
+        user_id: User UUID
+    
+    Used by: logout all devices, password change, etc.
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+        placeholder = "%s" if DATABASE_URL else "?"
+        
+        cursor.execute(
+            f"UPDATE sessions SET revoked = TRUE WHERE user_id = {placeholder}",
+            (user_id,)
+        )
+
+
+def cleanup_expired_sessions():
+    """
+    Remove expired sessions from database.
+    
+    Should be called periodically (e.g., daily cron job).
+    
+    Returns:
+        Number of sessions deleted
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            "DELETE FROM sessions WHERE expires_at < ?",
+            (datetime.now().isoformat(),)
+        ) if not DATABASE_URL else cursor.execute(
+            "DELETE FROM sessions WHERE expires_at < %s",
+            (datetime.now().isoformat(),)
+        )
+        
+        return cursor.rowcount
+
+
+# ============================================================================
+# Exam History Functions
+# ============================================================================
+
+def get_user_exams(user_id: str, limit: int = 50, offset: int = 0) -> List[Dict]:
+    """
+    Retrieve exam history for a user.
+    
+    Args:
+        user_id: User UUID
+        limit: Maximum number of exams to return (default 50)
+        offset: Number of exams to skip (for pagination)
+    
+    Returns:
+        List of exam dicts with:
+        - id: Exam ID
+        - created_at: Start timestamp
+        - completed_at: Completion timestamp (may be None)
+        - score: Final score (may be None if not completed)
+        - total_questions: Number of questions in exam
+        - percentage: Score percentage (may be None if not completed)
+    
+    Ordered by created_at DESC (newest first).
+    
+    Used by: services.py get_user_exam_history()
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+        placeholder = "%s" if DATABASE_URL else "?"
+        
+        cursor.execute(f"""
+            SELECT 
+                id,
+                question_ids,
+                created_at,
+                completed_at,
+                score,
+                user_id
+            FROM exams
+            WHERE user_id = {placeholder}
+            ORDER BY created_at DESC
+            LIMIT {placeholder} OFFSET {placeholder}
+        """, (user_id, limit, offset))
+        
+        rows = cursor.fetchall()
+        
+        exams = []
+        for row in rows:
+            # Convert to dict
+            if DATABASE_URL:
+                row_dict = dict(row)
+            else:
+                row_dict = {key: row[key] for key in row.keys()}
+            
+            # Parse question_ids to get count
+            question_ids_json = row_dict["question_ids"]
+            if isinstance(question_ids_json, str):
+                question_ids = json.loads(question_ids_json)
+            else:
+                question_ids = question_ids_json
+            
+            total_questions = len(question_ids)
+            
+            # Calculate percentage if completed
+            percentage = None
+            if row_dict["score"] is not None and total_questions > 0:
+                percentage = round((row_dict["score"] / total_questions) * 100, 2)
+            
+            exams.append({
+                "id": row_dict["id"],
+                "created_at": row_dict["created_at"],
+                "completed_at": row_dict["completed_at"],
+                "score": row_dict["score"],
+                "total_questions": total_questions,
+                "percentage": percentage
+            })
+        
+        return exams
+
+
+def get_user_exam_count(user_id: str) -> int:
+    """
+    Get total number of exams for a user.
+    
+    Args:
+        user_id: User UUID
+    
+    Returns:
+        Total number of exams
+    
+    Used by: Pagination logic
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+        placeholder = "%s" if DATABASE_URL else "?"
+        
+        cursor.execute(
+            f"SELECT COUNT(*) as count FROM exams WHERE user_id = {placeholder}",
+            (user_id,)
+        )
+        result = cursor.fetchone()
+        
+        if DATABASE_URL:
+            return result['count']
+        else:
+            return result[0]
+
+
+def get_user_exam_trends(user_id: str) -> List[Dict]:
+    """
+    Get time-series statistics for each completed exam.
+    
+    Args:
+        user_id: User UUID
+    
+    Returns:
+        List of dicts, one per exam, ordered chronologically:
+        - exam_id: Exam ID
+        - completed_at: Completion timestamp
+        - exam_number: Sequential exam number (1, 2, 3...)
+        - accuracy: Percentage correct for this exam
+        - average_confidence: Average confidence for this exam
+        - brier_score: Brier score for this exam
+        - bias_score: Calibration bias for this exam
+        - total_questions: Number of questions in exam
+    
+    Used by: Longitudinal tracking charts (Phase 3)
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+        placeholder = "%s" if DATABASE_URL else "?"
+        
+        # Get all completed exams with their answers, ordered chronologically
+        cursor.execute(f"""
+            SELECT 
+                e.id as exam_id,
+                e.completed_at,
+                ea.question_id,
+                ea.user_answer,
+                ea.confidence,
+                q.correct_answer
+            FROM exams e
+            JOIN exam_answers ea ON e.id = ea.exam_id
+            JOIN questions q ON ea.question_id = q.id
+            WHERE e.user_id = {placeholder} AND e.completed_at IS NOT NULL
+            ORDER BY e.completed_at ASC, e.id ASC
+        """, (user_id,))
+        
+        rows = cursor.fetchall()
+        
+        if not rows:
+            return []
+        
+        # Group by exam and calculate per-exam statistics
+        exams_data = {}
+        
+        for row in rows:
+            if DATABASE_URL:
+                row_dict = dict(row)
+            else:
+                row_dict = {key: row[key] for key in row.keys()}
+            
+            exam_id = row_dict["exam_id"]
+            
+            if exam_id not in exams_data:
+                exams_data[exam_id] = {
+                    "exam_id": exam_id,
+                    "completed_at": row_dict["completed_at"],
+                    "correct_count": 0,
+                    "total_questions": 0,
+                    "confidence_sum": 0,
+                    "confidence_count": 0,
+                    "brier_sum": 0,
+                    "brier_count": 0,
+                    "bias_sum": 0,
+                    "bias_count": 0
+                }
+            
+            exam_data = exams_data[exam_id]
+            exam_data["total_questions"] += 1
+            
+            user_answer = row_dict["user_answer"]
+            correct_answer = row_dict["correct_answer"]
+            confidence = row_dict["confidence"]
+            
+            is_correct = (user_answer == correct_answer)
+            if is_correct:
+                exam_data["correct_count"] += 1
+            
+            # Calculate metrics if confidence provided
+            if confidence is not None:
+                confidence_prob = confidence / 100.0
+                correctness = 1 if is_correct else 0
+                
+                exam_data["confidence_sum"] += confidence
+                exam_data["confidence_count"] += 1
+                exam_data["brier_sum"] += (confidence_prob - correctness) ** 2
+                exam_data["brier_count"] += 1
+                exam_data["bias_sum"] += (confidence_prob - correctness)
+                exam_data["bias_count"] += 1
+        
+        # Convert to list and calculate final statistics
+        trends = []
+        exam_number = 1
+        
+        for exam_id in sorted(exams_data.keys(), key=lambda eid: exams_data[eid]["completed_at"]):
+            exam_data = exams_data[exam_id]
+            
+            accuracy = (exam_data["correct_count"] / exam_data["total_questions"] * 100) if exam_data["total_questions"] > 0 else None
+            average_confidence = (exam_data["confidence_sum"] / exam_data["confidence_count"]) if exam_data["confidence_count"] > 0 else None
+            brier_score = (exam_data["brier_sum"] / exam_data["brier_count"]) if exam_data["brier_count"] > 0 else None
+            bias_score = (exam_data["bias_sum"] / exam_data["bias_count"]) if exam_data["bias_count"] > 0 else None
+            
+            trends.append({
+                "exam_id": exam_id,
+                "completed_at": exam_data["completed_at"],
+                "exam_number": exam_number,
+                "accuracy": round(accuracy, 2) if accuracy is not None else None,
+                "average_confidence": round(average_confidence, 2) if average_confidence is not None else None,
+                "brier_score": round(brier_score, 3) if brier_score is not None else None,
+                "bias_score": round(bias_score, 3) if bias_score is not None else None,
+                "total_questions": exam_data["total_questions"]
+            })
+            exam_number += 1
+        
+        return trends
+
+
+def get_user_statistics(user_id: str) -> Dict:
+    """
+    Calculate basic statistics for a user's completed exams.
+    
+    Args:
+        user_id: User UUID
+    
+    Returns:
+        Dictionary with:
+        - total_exams: Total number of completed exams
+        - total_questions: Total questions answered
+        - correct_answers: Total correct answers
+        - accuracy: Overall accuracy percentage
+        - average_confidence: Average confidence across all questions
+        - average_brier_score: Average Brier score
+        - average_bias_score: Average bias score
+    
+    Used by: Statistics endpoints (Phase 3 prep)
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+        placeholder = "%s" if DATABASE_URL else "?"
+        
+        # Get completed exams with their answers
+        cursor.execute(f"""
+            SELECT 
+                e.id as exam_id,
+                e.score,
+                ea.question_id,
+                ea.user_answer,
+                ea.confidence,
+                q.correct_answer
+            FROM exams e
+            JOIN exam_answers ea ON e.id = ea.exam_id
+            JOIN questions q ON ea.question_id = q.id
+            WHERE e.user_id = {placeholder} AND e.completed_at IS NOT NULL
+        """, (user_id,))
+        
+        rows = cursor.fetchall()
+        
+        if not rows:
+            return {
+                "total_exams": 0,
+                "total_questions": 0,
+                "correct_answers": 0,
+                "accuracy": None,
+                "average_confidence": None,
+                "average_brier_score": None,
+                "average_bias_score": None
+            }
+        
+        # Process results
+        exam_ids = set()
+        correct_count = 0
+        confidence_sum = 0
+        confidence_count = 0
+        brier_sum = 0
+        brier_count = 0
+        bias_sum = 0
+        bias_count = 0
+        
+        for row in rows:
+            if DATABASE_URL:
+                row_dict = dict(row)
+            else:
+                row_dict = {key: row[key] for key in row.keys()}
+            
+            exam_ids.add(row_dict["exam_id"])
+            
+            user_answer = row_dict["user_answer"]
+            correct_answer = row_dict["correct_answer"]
+            confidence = row_dict["confidence"]
+            
+            is_correct = (user_answer == correct_answer)
+            if is_correct:
+                correct_count += 1
+            
+            # Calculate metrics if confidence provided
+            if confidence is not None:
+                confidence_sum += confidence
+                confidence_count += 1
+                
+                # Brier score
+                confidence_prob = confidence / 100.0
+                correctness = 1 if is_correct else 0
+                brier_sum += (confidence_prob - correctness) ** 2
+                brier_count += 1
+                
+                # Bias score
+                bias_sum += (confidence_prob - correctness)
+                bias_count += 1
+        
+        total_questions = len(rows)
+        accuracy = (correct_count / total_questions * 100) if total_questions > 0 else None
+        average_confidence = (confidence_sum / confidence_count) if confidence_count > 0 else None
+        average_brier = (brier_sum / brier_count) if brier_count > 0 else None
+        average_bias = (bias_sum / bias_count) if bias_count > 0 else None
+        
+        return {
+            "total_exams": len(exam_ids),
+            "total_questions": total_questions,
+            "correct_answers": correct_count,
+            "accuracy": round(accuracy, 2) if accuracy is not None else None,
+            "average_confidence": round(average_confidence, 1) if average_confidence is not None else None,
+            "average_brier_score": round(average_brier, 3) if average_brier is not None else None,
+            "average_bias_score": round(average_bias, 3) if average_bias is not None else None
+        }

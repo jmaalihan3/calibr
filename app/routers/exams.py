@@ -2,17 +2,20 @@
 Exam API endpoints.
 
 REST API for exam operations:
-- POST /api/exams/start: Create new exam
+- POST /api/exams/start: Create new exam (anonymous or authenticated)
 - POST /api/exams/{exam_id}/submit: Submit answers
 - GET /api/exams/{exam_id}/results: Retrieve results
+- GET /api/exams/history: Get user's exam history (authenticated)
+- GET /api/exams/statistics: Get user's statistics (authenticated)
 
 Design: Thin controller layer, delegates to services.py
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from typing import Dict
+from typing import Dict, Optional
 from app import services
+from app.auth import get_current_user, get_current_user_optional
 
 
 router = APIRouter(prefix="/api/exams", tags=["exams"])
@@ -46,9 +49,16 @@ class SubmitExamRequest(BaseModel):
 
 
 @router.post("/start")
-async def start_exam(request: StartExamRequest = StartExamRequest()):
+async def start_exam(
+    request: StartExamRequest = StartExamRequest(),
+    user: Optional[Dict] = Depends(get_current_user_optional)
+):
     """
     Start a new exam with random questions.
+    
+    Authentication: Optional
+    - If authenticated, exam is linked to user for history tracking
+    - If anonymous, exam works but won't appear in history
     
     Request body:
         {
@@ -75,7 +85,13 @@ async def start_exam(request: StartExamRequest = StartExamRequest()):
     Note: Questions do not include correct answers (security)
     """
     try:
-        result = services.start_exam(num_questions=request.num_questions)
+        # Extract user_id if authenticated
+        user_id = user["id"] if user else None
+        
+        result = services.start_exam(
+            num_questions=request.num_questions,
+            user_id=user_id
+        )
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to start exam: {str(e)}")
@@ -170,3 +186,129 @@ async def get_results(exam_id: int):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve results: {str(e)}")
+
+
+@router.get("/history")
+async def get_exam_history(
+    limit: int = 50,
+    offset: int = 0,
+    user: Dict = Depends(get_current_user)
+):
+    """
+    Get exam history for authenticated user.
+    
+    Authentication: Required
+    
+    Query parameters:
+        limit: Maximum number of exams to return (default 50, max 100)
+        offset: Number of exams to skip for pagination (default 0)
+    
+    Response:
+        {
+            "exams": [
+                {
+                    "id": 123,
+                    "created_at": "2026-11-09T17:30:00",
+                    "completed_at": "2026-11-09T17:35:00",
+                    "score": 4,
+                    "total_questions": 5,
+                    "percentage": 80.0
+                },
+                ...
+            ],
+            "total": 15,
+            "limit": 50,
+            "offset": 0
+        }
+    
+    Status codes:
+        200: Success
+        401: Not authenticated
+        500: Server error
+    
+    Note: Ordered by created_at DESC (newest first)
+    """
+    try:
+        # Limit max to 100 for performance
+        if limit > 100:
+            limit = 100
+        
+        result = services.get_user_exam_history(
+            user_id=user["id"],
+            limit=limit,
+            offset=offset
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve exam history: {str(e)}")
+
+
+@router.get("/statistics")
+async def get_statistics(user: Dict = Depends(get_current_user)):
+    """
+    Get overall statistics for authenticated user.
+    
+    Authentication: Required
+    
+    Response:
+        {
+            "total_exams": 10,
+            "total_questions": 50,
+            "correct_answers": 42,
+            "accuracy": 84.0,
+            "average_confidence": 75.5,
+            "average_brier_score": 0.123,
+            "average_bias_score": -0.045
+        }
+    
+    Status codes:
+        200: Success
+        401: Not authenticated
+        500: Server error
+    
+    Note: Only includes completed exams
+    """
+    try:
+        result = services.get_user_statistics(user_id=user["id"])
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve statistics: {str(e)}")
+
+
+@router.get("/trends")
+async def get_exam_trends(user: Dict = Depends(get_current_user)):
+    """
+    Get time-series statistics for longitudinal tracking.
+    
+    Authentication: Required
+    
+    Response:
+        {
+            "trends": [
+                {
+                    "exam_id": 123,
+                    "completed_at": "2026-11-09T17:30:00",
+                    "exam_number": 1,
+                    "accuracy": 80.0,
+                    "average_confidence": 75.5,
+                    "brier_score": 0.123,
+                    "bias_score": -0.045,
+                    "total_questions": 5
+                },
+                ...
+            ]
+        }
+    
+    Status codes:
+        200: Success
+        401: Not authenticated
+        500: Server error
+    
+    Note: Ordered chronologically by completion date
+    Used for: Longitudinal tracking charts showing trends over time
+    """
+    try:
+        result = services.get_user_exam_trends(user_id=user["id"])
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve exam trends: {str(e)}")

@@ -19,12 +19,76 @@
         };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Academic Assessment System</h1>
+            <div class="header-content">
+                <h1>Academic Assessment System</h1>
+                <div id="auth-status" class="auth-status">
+                    <!-- Auth status will be inserted here by JavaScript -->
+                </div>
+            </div>
         </header>
+
+        <!-- Login Section -->
+        <section id="login-section" class="section">
+            <div class="card auth-card">
+                <h2>Login</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <div id="login-error" class="error-message" style="display: none;"></div>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                    <p class="auth-switch">
+                        Don't have an account? <a href="#" id="show-register">Register here</a>
+                    </p>
+                </form>
+            </div>
+        </section>
+
+        <!-- Register Section -->
+        <section id="register-section" class="section">
+            <div class="card auth-card">
+                <h2>Register</h2>
+                <form id="register-form">
+                    <div class="form-group">
+                        <label for="register-email">Email</label>
+                        <input type="email" id="register-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Password</label>
+                        <input type="password" id="register-password" required>
+                        <div class="password-requirements">
+                            <p>Password must contain:</p>
+                            <ul>
+                                <li>At least 8 characters</li>
+                                <li>One uppercase letter</li>
+                                <li>One lowercase letter</li>
+                                <li>One digit</li>
+                                <li>One special character (!@#$%^&*...)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password-confirm">Confirm Password</label>
+                        <input type="password" id="register-password-confirm" required>
+                    </div>
+                    <div id="register-error" class="error-message" style="display: none;"></div>
+                    <button type="submit" class="btn btn-primary">Register</button>
+                    <p class="auth-switch">
+                        Already have an account? <a href="#" id="show-login">Login here</a>
+                    </p>
+                </form>
+            </div>
+        </section>
 
         <!-- Home Section: Landing page with start button -->
         <section id="home-section" class="section active">
@@ -44,6 +108,70 @@
                 </div>
                 
                 <button id="start-btn" class="btn btn-primary">Start Exam</button>
+                
+                <!-- Exam History Link (only shown when authenticated) -->
+                <div id="history-link-container" style="display: none; margin-top: 20px; text-align: center;">
+                    <a href="#" id="view-history-link" class="text-link">View My Exam History</a>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Exam History Section -->
+        <section id="history-section" class="section">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">My Exam History</h2>
+                    <button id="back-to-home-btn" class="btn btn-secondary">Back to Home</button>
+                </div>
+                
+                <!-- Statistics Summary -->
+                <div id="statistics-summary" class="statistics-summary">
+                    <!-- Statistics will be loaded here -->
+                </div>
+                
+                <!-- Performance History Charts -->
+                <div id="performance-history" class="performance-history" style="display: none;">
+                    <h3>Performance History</h3>
+                    <p class="text-muted" style="margin-bottom: 15px;">Track your progress over time</p>
+                    
+                    <!-- Chart Toggle -->
+                    <div class="chart-toggle">
+                        <button id="show-performance-chart" class="btn btn-chart active">Performance</button>
+                        <button id="show-calibration-chart" class="btn btn-chart">Calibration</button>
+                    </div>
+                    
+                    <!-- Chart Containers -->
+                    <div id="performance-chart-container" class="chart-container">
+                        <canvas id="performance-chart"></canvas>
+                    </div>
+                    
+                    <div id="calibration-chart-container" class="chart-container" style="display: none;">
+                        <canvas id="calibration-chart"></canvas>
+                    </div>
+                    
+                    <!-- Chart Explanations -->
+                    <div class="chart-explanation">
+                        <div id="performance-explanation" class="explanation-text">
+                            <strong>Performance Metrics:</strong>
+                            <ul>
+                                <li><strong>Answer Accuracy:</strong> Percentage of questions answered correctly</li>
+                                <li><strong>Average Confidence:</strong> Your mean confidence level (0-100%)</li>
+                            </ul>
+                        </div>
+                        <div id="calibration-explanation" class="explanation-text" style="display: none;">
+                            <strong>Calibration Metrics:</strong>
+                            <ul>
+                                <li><strong>Brier Score:</strong> Mean squared difference between confidence and correctness (lower is better; 0 = perfect calibration)</li>
+                                <li><strong>Calibration Bias:</strong> Average (confidence - accuracy). Positive = overconfident, negative = underconfident, zero = well-calibrated</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Exam History List -->
+                <div id="history-list">
+                    <!-- History items will be loaded here -->
+                </div>
             </div>
         </section>
 

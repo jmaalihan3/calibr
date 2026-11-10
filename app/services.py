@@ -14,12 +14,13 @@ from typing import Dict, List
 from app import db
 
 
-def start_exam(num_questions: int = 5) -> Dict:
+def start_exam(num_questions: int = 5, user_id: str = None) -> Dict:
     """
     Initialize a new exam with random questions.
     
     Args:
         num_questions: Number of questions to include (default 5)
+        user_id: Optional user ID to link exam to (for authenticated users)
     
     Returns:
         Dictionary containing:
@@ -28,7 +29,7 @@ def start_exam(num_questions: int = 5) -> Dict:
     
     Process:
     1. Fetch random questions from database
-    2. Create exam instance with question IDs
+    2. Create exam instance with question IDs (and optional user_id)
     3. Return exam data for frontend
     
     Used by: routers/exams.py POST /api/exams/start
@@ -52,8 +53,8 @@ def start_exam(num_questions: int = 5) -> Dict:
     # Extract question IDs for exam record
     question_ids = [q["id"] for q in questions]
     
-    # Create exam instance
-    exam_id = db.create_exam(question_ids)
+    # Create exam instance (with optional user_id)
+    exam_id = db.create_exam(question_ids, user_id=user_id)
     
     return {
         "exam_id": exam_id,
@@ -286,3 +287,64 @@ def get_exam_results(exam_id: int) -> Dict:
         "results": results,
         "completed_at": exam_data["completed_at"]
     }
+
+
+def get_user_exam_history(user_id: str, limit: int = 50, offset: int = 0) -> Dict:
+    """
+    Retrieve exam history for a user.
+    
+    Args:
+        user_id: User UUID
+        limit: Maximum number of exams to return (default 50)
+        offset: Number of exams to skip (for pagination)
+    
+    Returns:
+        Dictionary containing:
+        - exams: List of exam summaries
+        - total: Total number of exams
+        - limit: Applied limit
+        - offset: Applied offset
+    
+    Used by: routers/exams.py GET /api/exams/history
+    """
+    exams = db.get_user_exams(user_id, limit=limit, offset=offset)
+    total = db.get_user_exam_count(user_id)
+    
+    return {
+        "exams": exams,
+        "total": total,
+        "limit": limit,
+        "offset": offset
+    }
+
+
+def get_user_statistics(user_id: str) -> Dict:
+    """
+    Get statistics for a user's completed exams.
+    
+    Args:
+        user_id: User UUID
+    
+    Returns:
+        Dictionary with statistics (see db.get_user_statistics)
+    
+    Used by: routers/exams.py GET /api/exams/statistics
+    """
+    return db.get_user_statistics(user_id)
+
+
+def get_user_exam_trends(user_id: str) -> Dict:
+    """
+    Get time-series statistics for longitudinal tracking.
+    
+    Args:
+        user_id: User UUID
+    
+    Returns:
+        Dictionary containing:
+        - trends: List of per-exam statistics ordered chronologically
+    
+    Used by: routers/exams.py GET /api/exams/trends
+    """
+    trends = db.get_user_exam_trends(user_id)
+    return {"trends": trends}

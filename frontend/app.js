@@ -18,7 +18,10 @@ const state = {
     currentQuestionIndex: 0,    // Index of current question (0-based)
     userAnswers: {},            // Map of questionId -> answerIndex
     userConfidence: {},         // Map of questionId -> confidence (0-100 percentage)
-    pendingConfidence: false    // Whether waiting for confidence input
+    pendingConfidence: false,   // Whether waiting for confidence input
+    // Authentication state
+    user: null,                 // Current user object (null if not authenticated)
+    csrfToken: null            // CSRF token for authenticated requests
 };
 
 // API base URL
@@ -27,9 +30,23 @@ const API_BASE = '/api';
 
 /**
  * Initialize application on page load.
- * Sets up event listeners for buttons.
+ * Sets up event listeners for buttons and checks authentication status.
  */
 function init() {
+    // Authentication: Login form
+    document.getElementById('login-form').addEventListener('submit', handleLogin);
+    document.getElementById('show-register').addEventListener('click', (e) => {
+        e.preventDefault();
+        showSection('register-section');
+    });
+    
+    // Authentication: Register form
+    document.getElementById('register-form').addEventListener('submit', handleRegister);
+    document.getElementById('show-login').addEventListener('click', (e) => {
+        e.preventDefault();
+        showSection('login-section');
+    });
+    
     // Home section: Start exam button
     document.getElementById('start-btn').addEventListener('click', startExam);
     
@@ -39,6 +56,15 @@ function init() {
     
     // Results section: New exam button
     document.getElementById('new-exam-btn').addEventListener('click', resetToHome);
+    
+    // History section: View history and back buttons
+    document.getElementById('view-history-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        showHistory();
+    });
+    document.getElementById('back-to-home-btn').addEventListener('click', () => {
+        showSection('home-section');
+    });
     
     // Confidence modal: Slider and confirm button
     const slider = document.getElementById('confidence-slider');
@@ -55,6 +81,9 @@ function init() {
     
     // Keyboard shortcut: Enter to confirm confidence
     document.addEventListener('keydown', handleKeyboardShortcut);
+    
+    // Check authentication status on page load
+    checkAuthStatus();
     
     console.log('Application initialized');
 }
@@ -963,6 +992,724 @@ function toggleQuestion(questionId) {
 
 // Make toggleQuestion globally accessible
 window.toggleQuestion = toggleQuestion;
+
+
+/**
+ * Check authentication status on page load.
+ * If authenticated, shows home section. Otherwise shows login.
+ */
+async function checkAuthStatus() {
+    try {
+        const response = await fetch(`${API_BASE}/auth/me`, {
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const user = await response.json();
+            state.user = user;
+            
+            // Get CSRF token
+            const csrfResponse = await fetch(`${API_BASE}/auth/csrf-token`, {
+                credentials: 'include'
+            });
+            if (csrfResponse.ok) {
+                const csrfData = await csrfResponse.json();
+                state.csrfToken = csrfData.csrf_token;
+            }
+            
+            // Update UI
+            updateAuthStatus();
+            showSection('home-section');
+        } else {
+            // Not authenticated - show login
+            showSection('login-section');
+        }
+    } catch (error) {
+        console.error('Error checking auth status:', error);
+        showSection('login-section');
+    }
+}
+
+
+/**
+ * Update authentication status display in header.
+ */
+function updateAuthStatus() {
+    const authStatus = document.getElementById('auth-status');
+    const historyLinkContainer = document.getElementById('history-link-container');
+    
+    if (state.user) {
+        authStatus.innerHTML = `
+            <span class="user-email">${state.user.email}</span>
+            <span class="logout-link" onclick="handleLogout()">Logout</span>
+        `;
+        // Show history link
+        if (historyLinkContainer) {
+            historyLinkContainer.style.display = 'block';
+        }
+    } else {
+        authStatus.innerHTML = '';
+        // Hide history link
+        if (historyLinkContainer) {
+            historyLinkContainer.style.display = 'none';
+        }
+    }
+}
+
+
+/**
+ * Handle login form submission.
+ */
+async function handleLogin(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const errorDiv = document.getElementById('login-error');
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    
+    // Disable button
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Logging in...';
+    errorDiv.style.display = 'none';
+    
+    try {
+        const response = await fetch(`${API_BASE}/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ email, password })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            state.user = data.user;
+            state.csrfToken = data.csrf_token;
+            
+            // Update UI
+            updateAuthStatus();
+            showSection('home-section');
+            
+            // Clear form
+            document.getElementById('login-form').reset();
+        } else {
+            const error = await response.json();
+            errorDiv.textContent = error.detail || 'Login failed';
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        errorDiv.textContent = 'Network error. Please try again.';
+        errorDiv.style.display = 'block';
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Login';
+    }
+}
+
+
+/**
+ * Handle register form submission.
+ */
+async function handleRegister(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('register-email').value;
+    const password = document.getElementById('register-password').value;
+    const passwordConfirm = document.getElementById('register-password-confirm').value;
+    const errorDiv = document.getElementById('register-error');
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    
+    // Validate passwords match
+    if (password !== passwordConfirm) {
+        errorDiv.textContent = 'Passwords do not match';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    // Disable button
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Registering...';
+    errorDiv.style.display = 'none';
+    
+    try {
+        const response = await fetch(`${API_BASE}/auth/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+        });
+        
+        if (response.ok) {
+            // Registration successful - show login form
+            alert('Registration successful! Please log in.');
+            showSection('login-section');
+            
+            // Pre-fill email in login form
+            document.getElementById('login-email').value = email;
+            
+            // Clear register form
+            document.getElementById('register-form').reset();
+        } else {
+            const error = await response.json();
+            
+            // Parse validation errors
+            if (error.detail && Array.isArray(error.detail)) {
+                const errors = error.detail.map(err => err.msg).join(', ');
+                errorDiv.textContent = errors;
+            } else {
+                errorDiv.textContent = error.detail || 'Registration failed';
+            }
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Registration error:', error);
+        errorDiv.textContent = 'Network error. Please try again.';
+        errorDiv.style.display = 'block';
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Register';
+    }
+}
+
+
+/**
+ * Handle logout.
+ */
+async function handleLogout() {
+    if (!state.csrfToken) {
+        // No CSRF token - just clear state and show login
+        state.user = null;
+        state.csrfToken = null;
+        updateAuthStatus();
+        showSection('login-section');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/auth/logout`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-Token': state.csrfToken
+            },
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            state.user = null;
+            state.csrfToken = null;
+            updateAuthStatus();
+            showSection('login-section');
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+        // Even if logout fails, clear local state
+        state.user = null;
+        state.csrfToken = null;
+        updateAuthStatus();
+        showSection('login-section');
+    }
+}
+
+
+/**
+ * Show exam history section and load data.
+ */
+async function showHistory() {
+    showSection('history-section');
+    
+    // Load statistics
+    await loadStatistics();
+    
+    // Load exam history
+    await loadExamHistory();
+    
+    // Load performance history charts
+    await loadPerformanceCharts();
+}
+
+
+/**
+ * Load and display user statistics.
+ */
+async function loadStatistics() {
+    const summaryDiv = document.getElementById('statistics-summary');
+    
+    try {
+        const response = await fetch(`${API_BASE}/exams/statistics`, {
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const stats = await response.json();
+            
+            if (stats.total_exams === 0) {
+                summaryDiv.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; color: #888;">
+                        No completed exams yet. Take an exam to see your statistics!
+                    </div>
+                `;
+            } else {
+                summaryDiv.innerHTML = `
+                    <div class="stat-item">
+                        <div class="stat-label">Total Exams</div>
+                        <div class="stat-value">${stats.total_exams}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Accuracy</div>
+                        <div class="stat-value">${stats.accuracy ? stats.accuracy.toFixed(1) : 'N/A'}<span class="stat-unit">%</span></div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Avg Confidence</div>
+                        <div class="stat-value">${stats.average_confidence ? stats.average_confidence.toFixed(1) : 'N/A'}<span class="stat-unit">%</span></div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Brier Score</div>
+                        <div class="stat-value">${stats.average_brier_score ? stats.average_brier_score.toFixed(3) : 'N/A'}</div>
+                    </div>
+                `;
+            }
+        } else {
+            summaryDiv.innerHTML = '<div style="color: #ff4444;">Failed to load statistics</div>';
+        }
+    } catch (error) {
+        console.error('Error loading statistics:', error);
+        summaryDiv.innerHTML = '<div style="color: #ff4444;">Error loading statistics</div>';
+    }
+}
+
+
+/**
+ * Load and display exam history.
+ */
+async function loadExamHistory() {
+    const historyList = document.getElementById('history-list');
+    
+    try {
+        const response = await fetch(`${API_BASE}/exams/history?limit=50`, {
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.exams.length === 0) {
+                historyList.innerHTML = `
+                    <div class="history-empty">
+                        <p>No exam history yet.</p>
+                        <p>Take your first exam to start tracking your progress!</p>
+                    </div>
+                `;
+            } else {
+                historyList.innerHTML = data.exams.map(exam => renderHistoryItem(exam)).join('');
+            }
+        } else {
+            historyList.innerHTML = '<div style="color: #ff4444;">Failed to load exam history</div>';
+        }
+    } catch (error) {
+        console.error('Error loading exam history:', error);
+        historyList.innerHTML = '<div style="color: #ff4444;">Error loading exam history</div>';
+    }
+}
+
+
+/**
+ * Render a single history item.
+ */
+function renderHistoryItem(exam) {
+    const date = new Date(exam.created_at);
+    const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+    
+    // Determine score color
+    let scoreClass = 'poor';
+    if (exam.percentage >= 80) scoreClass = 'good';
+    else if (exam.percentage >= 60) scoreClass = 'medium';
+    
+    // Status
+    const status = exam.completed_at ? 'Completed' : 'In Progress';
+    const scoreDisplay = exam.score !== null 
+        ? `${exam.score}/${exam.total_questions} (${exam.percentage.toFixed(0)}%)`
+        : 'Not completed';
+    
+    return `
+        <div class="history-item" onclick="viewExamResults(${exam.id})">
+            <div class="history-item-header">
+                <div class="history-item-date">${dateStr}</div>
+                <div class="history-item-score ${scoreClass}">${scoreDisplay}</div>
+            </div>
+            <div class="history-item-details">
+                <span>${exam.total_questions} questions</span>
+                <span>•</span>
+                <span>${status}</span>
+            </div>
+        </div>
+    `;
+}
+
+
+/**
+ * View results for a specific exam from history.
+ */
+async function viewExamResults(examId) {
+    try {
+        const response = await fetch(`${API_BASE}/exams/${examId}/results`, {
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const results = await response.json();
+            
+            // Show results section
+            showSection('results-section');
+            renderResults(results);
+        } else {
+            alert('Failed to load exam results');
+        }
+    } catch (error) {
+        console.error('Error loading exam results:', error);
+        alert('Error loading exam results');
+    }
+}
+
+
+/**
+ * Load and display performance history charts.
+ */
+let performanceChart = null;
+let calibrationChart = null;
+
+async function loadPerformanceCharts() {
+    const chartSection = document.getElementById('performance-history');
+    
+    try {
+        const response = await fetch(`${API_BASE}/exams/trends`, {
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const trends = data.trends;
+            
+            if (trends && trends.length >= 2) {
+                // Show chart section
+                chartSection.style.display = 'block';
+                
+                // Set up chart toggle buttons
+                setupChartToggle();
+                
+                // Render both charts
+                renderPerformanceChart(trends);
+                renderCalibrationChart(trends);
+            } else {
+                // Hide chart section if not enough data
+                chartSection.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading performance charts:', error);
+        chartSection.style.display = 'none';
+    }
+}
+
+
+/**
+ * Set up chart toggle button handlers.
+ */
+function setupChartToggle() {
+    const performanceBtn = document.getElementById('show-performance-chart');
+    const calibrationBtn = document.getElementById('show-calibration-chart');
+    const performanceContainer = document.getElementById('performance-chart-container');
+    const calibrationContainer = document.getElementById('calibration-chart-container');
+    const performanceExplanation = document.getElementById('performance-explanation');
+    const calibrationExplanation = document.getElementById('calibration-explanation');
+    
+    performanceBtn.addEventListener('click', () => {
+        performanceBtn.classList.add('active');
+        calibrationBtn.classList.remove('active');
+        performanceContainer.style.display = 'block';
+        calibrationContainer.style.display = 'none';
+        performanceExplanation.style.display = 'block';
+        calibrationExplanation.style.display = 'none';
+    });
+    
+    calibrationBtn.addEventListener('click', () => {
+        calibrationBtn.classList.add('active');
+        performanceBtn.classList.remove('active');
+        calibrationContainer.style.display = 'block';
+        performanceContainer.style.display = 'none';
+        calibrationExplanation.style.display = 'block';
+        performanceExplanation.style.display = 'none';
+    });
+}
+
+
+/**
+ * Render performance chart (accuracy and confidence).
+ */
+function renderPerformanceChart(trends) {
+    const canvas = document.getElementById('performance-chart');
+    const ctx = canvas.getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (performanceChart) {
+        performanceChart.destroy();
+    }
+    
+    // Prepare data
+    const labels = trends.map(t => `Exam ${t.exam_number}`);
+    const accuracy = trends.map(t => t.accuracy);
+    const confidence = trends.map(t => t.average_confidence);
+    
+    // Create chart
+    performanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Answer Accuracy (%)',
+                    data: accuracy,
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                },
+                {
+                    label: 'Average Confidence (%)',
+                    data: confidence,
+                    borderColor: '#4a9eff',
+                    backgroundColor: 'rgba(74, 158, 255, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: '#e0e0e0',
+                        padding: 15,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Performance Over Time',
+                    color: '#e0e0e0',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    },
+                    padding: {
+                        bottom: 20
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: '#3a3a3a',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: '#3a3a3a'
+                    },
+                    ticks: {
+                        color: '#b0b0b0'
+                    }
+                },
+                y: {
+                    min: 0,
+                    max: 100,
+                    grid: {
+                        color: '#3a3a3a'
+                    },
+                    ticks: {
+                        color: '#b0b0b0',
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Percentage (%)',
+                        color: '#b0b0b0'
+                    }
+                }
+            }
+        }
+    });
+}
+
+
+/**
+ * Render calibration chart (Brier score and bias).
+ */
+function renderCalibrationChart(trends) {
+    const canvas = document.getElementById('calibration-chart');
+    const ctx = canvas.getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (calibrationChart) {
+        calibrationChart.destroy();
+    }
+    
+    // Prepare data
+    const labels = trends.map(t => `Exam ${t.exam_number}`);
+    const brierScores = trends.map(t => t.brier_score);
+    const biasScores = trends.map(t => t.bias_score);
+    
+    // Create chart with dual y-axes
+    calibrationChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Brier Score',
+                    data: brierScores,
+                    borderColor: '#ff9800',
+                    backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    yAxisID: 'y-brier'
+                },
+                {
+                    label: 'Calibration Bias',
+                    data: biasScores,
+                    borderColor: '#9c27b0',
+                    backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    yAxisID: 'y-bias'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: '#e0e0e0',
+                        padding: 15,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Calibration Over Time',
+                    color: '#e0e0e0',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    },
+                    padding: {
+                        bottom: 20
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: '#3a3a3a',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += context.parsed.y.toFixed(3);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: '#3a3a3a'
+                    },
+                    ticks: {
+                        color: '#b0b0b0'
+                    }
+                },
+                'y-brier': {
+                    type: 'linear',
+                    position: 'left',
+                    min: 0,
+                    max: 0.5,
+                    grid: {
+                        color: '#3a3a3a'
+                    },
+                    ticks: {
+                        color: '#ff9800',
+                        callback: function(value) {
+                            return value.toFixed(2);
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Brier Score',
+                        color: '#ff9800'
+                    }
+                },
+                'y-bias': {
+                    type: 'linear',
+                    position: 'right',
+                    min: -0.5,
+                    max: 0.5,
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    ticks: {
+                        color: '#9c27b0',
+                        callback: function(value) {
+                            return value.toFixed(2);
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Calibration Bias',
+                        color: '#9c27b0'
+                    }
+                }
+            }
+        }
+    });
+}
 
 
 // Initialize app when DOM is ready
