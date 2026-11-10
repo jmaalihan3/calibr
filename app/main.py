@@ -17,8 +17,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
-from app.routers import exams
+from app.routers import exams, auth
 from app import db
+from app.config import config
 
 
 @asynccontextmanager
@@ -52,19 +53,24 @@ app = FastAPI(
 )
 
 # Configure CORS
-# Allow requests from localhost for frontend development and Render deployment
-allowed_origins = [
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-    "http://localhost:8080",
-    "http://127.0.0.1:8080"
-]
-
-# Add Render URL if deployed (Render sets this env var)
-render_url = os.getenv("RENDER_EXTERNAL_URL")
-if render_url:
-    allowed_origins.append(render_url)
-    allowed_origins.append(render_url.replace("http://", "https://"))
+# Production: Only allow the deployed URL
+# Development: Allow localhost for testing
+if config.is_production():
+    render_url = os.getenv("RENDER_EXTERNAL_URL")
+    if render_url:
+        allowed_origins = [
+            render_url,
+            render_url.replace("http://", "https://")
+        ]
+    else:
+        allowed_origins = []
+else:
+    allowed_origins = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080"
+    ]
 
 app.add_middleware(
     CORSMiddleware,
@@ -89,6 +95,7 @@ async def health_check():
 
 
 # Include API routers
+app.include_router(auth.router)
 app.include_router(exams.router)
 
 

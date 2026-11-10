@@ -19,3 +19,15 @@ services:
         fromDatabase:
           name: zcalib-db
           property: connectionString
+      - key: ENVIRONMENT
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CSRF_SECRET
+        generateValue: true
+      - key: SESSION_TIMEOUT_DAYS
+        value: 7
+      - key: RATE_LIMIT_LOGIN
+        value: 5
+      - key: RATE_LIMIT_REGISTER
+        value: 3

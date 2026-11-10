@@ -35,6 +35,7 @@ htmlcov/
 *.sqlite
 *.sqlite3
 exams.db
+exams.db.backup
 
 # IDE
 .vscode/
@@ -53,3 +54,8 @@ exams.db
 
 # History (per project requirements)
 # history.txt
+
+# Frontend test files (not for production)
+frontend/test-*.html
+frontend/example-*.html
+frontend/debug-*.html
