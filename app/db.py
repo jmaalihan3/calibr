@@ -75,6 +75,83 @@ def get_db():
         conn.close()
 
 
+def _load_statcal_questions(cursor):
+    """
+    Load StatCal categorical data questions from structured markdown file.
+    Called internally by init_db() when database is empty.
+    """
+    import os
+    
+    # Path to questions file
+    filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), 
+                           'statcal_categorical_data_unit_1_exam_structured.md')
+    
+    if not os.path.exists(filepath):
+        print(f"Warning: {filepath} not found, skipping StatCal questions")
+        return
+    
+    try:
+        # Read and parse markdown file
+        with open(filepath, 'r') as f:
+            content = f.read()
+        
+        # Extract JSON from markdown code block
+        json_start = content.find('```json\n') + 8
+        json_end = content.find('\n```', json_start)
+        json_content = content[json_start:json_end]
+        data = json.loads(json_content)
+        
+        unit = data['unit']
+        unit_name = data['unit_name']
+        questions = data['questions']
+        
+        placeholder = "%s" if DATABASE_URL else "?"
+        
+        # Insert questions
+        for q in questions:
+            # Extract options text only
+            options = [choice['text'] for choice in q['choices']]
+            
+            # Find correct answer index
+            correct_answer = None
+            explanation = None
+            for idx, choice in enumerate(q['choices']):
+                if choice['is_correct']:
+                    correct_answer = idx
+                    explanation = choice['explanation']
+                    break
+            
+            # Serialize JSON fields
+            options_json = json.dumps(options) if not DATABASE_URL else options
+            choices_json = json.dumps(q['choices'])
+            review_json = json.dumps(q.get('review', {}))
+            
+            cursor.execute(
+                f"""
+                INSERT INTO questions 
+                (question_text, options, correct_answer, unit, unit_name, topic, explanation, choices_json, review_json)
+                VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
+                """,
+                (
+                    q['question'],
+                    options_json,
+                    correct_answer,
+                    str(unit),
+                    unit_name,
+                    q.get('topic', ''),
+                    explanation,
+                    choices_json,
+                    review_json
+                )
+            )
+        
+        print(f"Loaded {len(questions)} StatCal questions")
+    
+    except Exception as e:
+        print(f"Error loading StatCal questions: {e}")
+        # Continue with fallback questions
+
+
 def init_db():
     """
     Initialize database schema and populate with sample questions.
@@ -245,8 +322,21 @@ def init_db():
             # SQLite returns tuple-like Row
             question_count = count_result[0]
         
-        # Populate questions if table is empty OR has fewer than 10 basic questions
+        # Load StatCal questions if none exist
+        if question_count == 0:
+            print("Loading StatCal categorical data questions...")
+            _load_statcal_questions(cursor)
+            print(f"Loaded StatCal questions successfully")
+        
+        # Fallback: Populate with basic sample questions if still empty
         # This handles migrations where tables exist but questions were never loaded
+        cursor.execute("SELECT COUNT(*) as count FROM questions")
+        count_result = cursor.fetchone()
+        if DATABASE_URL:
+            question_count = count_result['count']
+        else:
+            question_count = count_result[0]
+            
         if question_count < 10:
             # Populate with sample questions
             sample_questions = [
