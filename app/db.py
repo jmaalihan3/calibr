@@ -192,6 +192,27 @@ def init_db():
             )
         """)
         
+        # Migration: Add user_id column if it doesn't exist (for existing deployments)
+        if DATABASE_URL:
+            # PostgreSQL: Check and add column
+            cursor.execute("""
+                DO $$ 
+                BEGIN 
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name='exams' AND column_name='user_id'
+                    ) THEN
+                        ALTER TABLE exams ADD COLUMN user_id UUID;
+                    END IF;
+                END $$;
+            """)
+        else:
+            # SQLite: Check if column exists
+            cursor.execute("PRAGMA table_info(exams)")
+            columns = [row[1] if isinstance(row, tuple) else row['name'] for row in cursor.fetchall()]
+            if 'user_id' not in columns:
+                cursor.execute("ALTER TABLE exams ADD COLUMN user_id TEXT")
+        
         # Create index on user_id for exam history queries
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_exams_user_id 
