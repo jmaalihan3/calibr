@@ -358,8 +358,7 @@ def init_db():
             )
         """)
         
-        # Check if questions already exist to avoid duplicates
-        # Always ensure we have at least the basic sample questions
+        # Check if questions need to be loaded or reloaded
         cursor.execute("SELECT COUNT(*) as count FROM questions")
         count_result = cursor.fetchone()
         
@@ -371,14 +370,33 @@ def init_db():
             # SQLite returns tuple-like Row
             question_count = count_result[0]
         
-        # Load StatCal questions if none exist
-        if question_count == 0:
+        # Check if existing questions have the new format (choices_json populated)
+        needs_reload = False
+        if question_count > 0:
+            cursor.execute("SELECT choices_json FROM questions LIMIT 1")
+            sample = cursor.fetchone()
+            if DATABASE_URL:
+                choices_json = sample['choices_json'] if sample else None
+            else:
+                choices_json = sample[0] if sample else None
+            
+            # If choices_json is NULL or empty, we have old-format questions
+            if not choices_json:
+                print("Detected old question format, reloading with StatCal questions...")
+                needs_reload = True
+                # Clear old questions
+                cursor.execute("DELETE FROM questions")
+                conn.commit()
+                question_count = 0
+        
+        # Load StatCal questions if none exist or reload needed
+        if question_count == 0 or needs_reload:
             print("Loading StatCal categorical data questions...")
             _load_statcal_questions(cursor)
+            conn.commit()
             print(f"Loaded StatCal questions successfully")
         
-        # Fallback: Populate with basic sample questions if still empty
-        # This handles migrations where tables exist but questions were never loaded
+        # Verify questions were loaded
         cursor.execute("SELECT COUNT(*) as count FROM questions")
         count_result = cursor.fetchone()
         if DATABASE_URL:
@@ -386,6 +404,7 @@ def init_db():
         else:
             question_count = count_result[0]
             
+        # Fallback: Populate with basic sample questions if StatCal load failed
         if question_count < 10:
             # Populate with sample questions
             sample_questions = [
