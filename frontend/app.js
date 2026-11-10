@@ -54,8 +54,11 @@ function init() {
     document.getElementById('next-btn').addEventListener('click', nextQuestion);
     document.getElementById('submit-btn').addEventListener('click', submitExam);
     
-    // Results section: New exam button
+    // Results section: New exam button and view history button
     document.getElementById('new-exam-btn').addEventListener('click', resetToHome);
+    document.getElementById('view-history-from-results-btn').addEventListener('click', () => {
+        showHistory();
+    });
     
     // History section: View history and back buttons
     document.getElementById('view-history-link').addEventListener('click', (e) => {
@@ -349,6 +352,9 @@ async function submitExam() {
         // Show results
         showSection('results-section');
         renderResults(results);
+        
+        // Update auth status to show/hide history button
+        updateAuthStatus();
         
     } catch (error) {
         console.error('Error submitting exam:', error);
@@ -1046,21 +1052,30 @@ async function checkAuthStatus() {
 function updateAuthStatus() {
     const authStatus = document.getElementById('auth-status');
     const historyLinkContainer = document.getElementById('history-link-container');
+    const viewHistoryFromResultsBtn = document.getElementById('view-history-from-results-btn');
     
     if (state.user) {
         authStatus.innerHTML = `
             <span class="user-email">${state.user.email}</span>
             <span class="logout-link" onclick="handleLogout()">Logout</span>
         `;
-        // Show history link
+        // Show history link on home page
         if (historyLinkContainer) {
             historyLinkContainer.style.display = 'block';
         }
+        // Show history button on results page
+        if (viewHistoryFromResultsBtn) {
+            viewHistoryFromResultsBtn.style.display = 'inline-block';
+        }
     } else {
         authStatus.innerHTML = '';
-        // Hide history link
+        // Hide history link on home page
         if (historyLinkContainer) {
             historyLinkContainer.style.display = 'none';
+        }
+        // Hide history button on results page
+        if (viewHistoryFromResultsBtn) {
+            viewHistoryFromResultsBtn.style.display = 'none';
         }
     }
 }
@@ -1374,6 +1389,9 @@ async function viewExamResults(examId) {
             // Show results section
             showSection('results-section');
             renderResults(results);
+            
+            // Update auth status to show/hide history button
+            updateAuthStatus();
         } else {
             alert('Failed to load exam results');
         }

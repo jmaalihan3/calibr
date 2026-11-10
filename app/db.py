@@ -1229,6 +1229,7 @@ def get_user_exam_trends(user_id: str) -> List[Dict]:
         placeholder = "%s" if DATABASE_URL else "?"
         
         # Get all completed exams with their answers, ordered chronologically
+        # Use LEFT JOIN for questions to handle orphaned data gracefully
         cursor.execute(f"""
             SELECT 
                 e.id as exam_id,
@@ -1239,7 +1240,7 @@ def get_user_exam_trends(user_id: str) -> List[Dict]:
                 q.correct_answer
             FROM exams e
             JOIN exam_answers ea ON e.id = ea.exam_id
-            JOIN questions q ON ea.question_id = q.id
+            LEFT JOIN questions q ON ea.question_id = q.id
             WHERE e.user_id = {placeholder} AND e.completed_at IS NOT NULL
             ORDER BY e.completed_at ASC, e.id ASC
         """, (user_id,))
@@ -1275,6 +1276,11 @@ def get_user_exam_trends(user_id: str) -> List[Dict]:
                 }
             
             exam_data = exams_data[exam_id]
+            
+            # Skip if question no longer exists (orphaned data)
+            if row_dict["correct_answer"] is None:
+                continue
+            
             exam_data["total_questions"] += 1
             
             user_answer = row_dict["user_answer"]
@@ -1348,6 +1354,7 @@ def get_user_statistics(user_id: str) -> Dict:
         placeholder = "%s" if DATABASE_URL else "?"
         
         # Get completed exams with their answers
+        # Use LEFT JOIN for questions to handle orphaned data gracefully
         cursor.execute(f"""
             SELECT 
                 e.id as exam_id,
@@ -1358,7 +1365,7 @@ def get_user_statistics(user_id: str) -> Dict:
                 q.correct_answer
             FROM exams e
             JOIN exam_answers ea ON e.id = ea.exam_id
-            JOIN questions q ON ea.question_id = q.id
+            LEFT JOIN questions q ON ea.question_id = q.id
             WHERE e.user_id = {placeholder} AND e.completed_at IS NOT NULL
         """, (user_id,))
         
@@ -1392,6 +1399,10 @@ def get_user_statistics(user_id: str) -> Dict:
                 row_dict = {key: row[key] for key in row.keys()}
             
             exam_ids.add(row_dict["exam_id"])
+            
+            # Skip if question no longer exists (orphaned data)
+            if row_dict["correct_answer"] is None:
+                continue
             
             user_answer = row_dict["user_answer"]
             correct_answer = row_dict["correct_answer"]
