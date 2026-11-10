@@ -233,6 +233,7 @@ def init_db():
         """)
         
         # Check if questions already exist to avoid duplicates
+        # Always ensure we have at least the basic sample questions
         cursor.execute("SELECT COUNT(*) as count FROM questions")
         count_result = cursor.fetchone()
         
@@ -244,7 +245,9 @@ def init_db():
             # SQLite returns tuple-like Row
             question_count = count_result[0]
         
-        if question_count == 0:
+        # Populate questions if table is empty OR has fewer than 10 basic questions
+        # This handles migrations where tables exist but questions were never loaded
+        if question_count < 10:
             # Populate with sample questions
             sample_questions = [
                 {
