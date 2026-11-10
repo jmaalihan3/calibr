@@ -124,11 +124,20 @@ async function startExam() {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include',  // Include cookies for authentication
             body: JSON.stringify({ num_questions: numQuestions })
         });
         
         if (!response.ok) {
-            throw new Error(`Failed to start exam: ${response.statusText}`);
+            // Try to get detailed error message from response
+            let errorDetail = response.statusText;
+            try {
+                const errorData = await response.json();
+                errorDetail = errorData.detail || errorData.message || response.statusText;
+            } catch (e) {
+                // If response is not JSON, use status text
+            }
+            throw new Error(`Failed to start exam: ${errorDetail}`);
         }
         
         const data = await response.json();
@@ -147,7 +156,7 @@ async function startExam() {
         
     } catch (error) {
         console.error('Error starting exam:', error);
-        alert('Failed to start exam. Please try again.');
+        alert(`Failed to start exam: ${error.message}\n\nCheck browser console (F12) for details.`);
         startBtn.disabled = false;
         startBtn.textContent = 'Start Exam';
     }

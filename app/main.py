@@ -53,9 +53,10 @@ app = FastAPI(
 )
 
 # Configure CORS
-# Production: Only allow the deployed URL
+# Production: Frontend served from same domain, so allow same-origin
 # Development: Allow localhost for testing
 if config.is_production():
+    # On Render, frontend and backend are same origin, but set RENDER_EXTERNAL_URL just in case
     render_url = os.getenv("RENDER_EXTERNAL_URL")
     if render_url:
         allowed_origins = [
@@ -63,7 +64,9 @@ if config.is_production():
             render_url.replace("http://", "https://")
         ]
     else:
-        allowed_origins = []
+        # Allow any origin in production if RENDER_EXTERNAL_URL not set
+        # (frontend is served from same domain anyway)
+        allowed_origins = ["*"]
 else:
     allowed_origins = [
         "http://localhost:8000",
@@ -92,6 +95,28 @@ async def health_check():
     Use: Verify API is running
     """
     return {"status": "ok", "message": "API is running"}
+
+
+# Debug endpoint to check database state
+@app.get("/api/debug/questions-count")
+async def debug_questions_count():
+    """
+    Debug endpoint to check how many questions are in the database.
+    Remove this in production once debugging is complete.
+    """
+    try:
+        from app import db
+        with db.get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) as count FROM questions")
+            result = cursor.fetchone()
+            if db.DATABASE_URL:
+                count = result['count']
+            else:
+                count = result[0]
+            return {"question_count": count, "database": "PostgreSQL" if db.DATABASE_URL else "SQLite"}
+    except Exception as e:
+        return {"error": str(e)}
 
 
 # Include API routers
