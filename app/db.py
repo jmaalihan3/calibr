@@ -256,6 +256,55 @@ def init_db():
             )
         """)
         
+        # Migration: Add choices_json and review_json columns if they don't exist
+        if DATABASE_URL:
+            # PostgreSQL: Check and add columns
+            cursor.execute("""
+                DO $$ 
+                BEGIN 
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name='questions' AND column_name='topic'
+                    ) THEN
+                        ALTER TABLE questions ADD COLUMN topic TEXT;
+                    END IF;
+                    
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name='questions' AND column_name='explanation'
+                    ) THEN
+                        ALTER TABLE questions ADD COLUMN explanation TEXT;
+                    END IF;
+                    
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name='questions' AND column_name='choices_json'
+                    ) THEN
+                        ALTER TABLE questions ADD COLUMN choices_json TEXT;
+                    END IF;
+                    
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name='questions' AND column_name='review_json'
+                    ) THEN
+                        ALTER TABLE questions ADD COLUMN review_json TEXT;
+                    END IF;
+                END $$;
+            """)
+        else:
+            # SQLite: Check if columns exist
+            cursor.execute("PRAGMA table_info(questions)")
+            columns = [row[1] if isinstance(row, tuple) else row['name'] for row in cursor.fetchall()]
+            
+            if 'topic' not in columns:
+                cursor.execute("ALTER TABLE questions ADD COLUMN topic TEXT")
+            if 'explanation' not in columns:
+                cursor.execute("ALTER TABLE questions ADD COLUMN explanation TEXT")
+            if 'choices_json' not in columns:
+                cursor.execute("ALTER TABLE questions ADD COLUMN choices_json TEXT")
+            if 'review_json' not in columns:
+                cursor.execute("ALTER TABLE questions ADD COLUMN review_json TEXT")
+        
         # Exams table (with user_id for authenticated users)
         cursor.execute(f"""
             CREATE TABLE IF NOT EXISTS exams (
