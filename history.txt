@@ -564,3 +564,38 @@ Verification:
   Take Another Exam action resets the button; reload also restores it.
 - Completed two assessments and verified that both performance and calibration
   history charts render and toggle. Final browser run reported no page errors.
+
+## 2026-11-12 — Match Study Studio layout to the mockup
+
+Corrected discrepancies in the initial redesign: the instructional left rail
+was not the mockup's navigation, the right session guide and progress bar were
+missing, and confidence entry still floated over the question. The earlier
+verification established functionality but did not establish visual fidelity.
+
+- Added Practice / Results / History navigation using existing section/history
+  actions; Results is available after result content exists. Existing authentication
+  visibility rules still control History. Mobile keeps compact navigation visible.
+- Added the wide-screen Your session column, separate from navigation, and a
+  native progress bar reflecting the existing current question and total.
+- Removed the extra workspace header during questions, restored the paper
+  workspace and unboxed question area, and adjusted heading scale, row heights,
+  radio alignment, borders, spacing, and forest/sage control styling.
+- Moved the existing confidence element inside the assessment card and rendered
+  it inline. Its controls, defaults, increments, confirmation handler, and
+  confidence storage are unchanged. Next/Submit appears after confirmation;
+  Confirm and Next remain separate actions rather than changing their handlers.
+- Versioned CSS and JS URLs so a newly loaded page requests the revised assets.
+  Cached CSS was a possible deployment symptom, not a confirmed root cause.
+- Updated the cited rationale to describe the actual implementation, and added
+  desktop/mobile browser screenshots using illustrative question data.
+
+Verification: node syntax and whitespace checks; Chromium checks at 375, 768,
+1024, and 1440 CSS pixels for actual palette, visible navigation, responsive
+session column, current progress, inline confidence, and horizontal overflow.
+Rechecked registration/login, assessment, confidence, results, history, and both
+history charts using the real local backend. The external CDN was accessed via
+an HTTP-client bridge during browser checks, as documented in the prior entry.
+The previously identified two backend seed-test failures are outside this visual
+correction. No backend, scoring, API, or assessment-state calculations changed.
+The deployed URL has been requested to verify the user's hosted instance;
+local verification alone does not establish which branch their host deploys.

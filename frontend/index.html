@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calibr | Study Studio</title>
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/styles.css?v=study-studio-2">
     <script>
         MathJax = {
             tex: {
@@ -25,12 +25,13 @@
     <div class="studio-layout">
     <aside class="studio-sidebar" aria-label="About Study Studio">
         <div class="studio-brand">Calibr<span>STUDY STUDIO</span></div>
-        <p class="studio-motto">A little practice.<br>A clearer picture.</p>
-        <ol class="studio-steps" aria-label="How practice works">
-            <li><span>01</span><div>Answer<small>Take your time.</small></div></li>
-            <li><span>02</span><div>Estimate<small>Notice how certain you feel.</small></div></li>
-            <li><span>03</span><div>Review<small>Learn from the difference.</small></div></li>
-        </ol>
+        <nav class="studio-nav" aria-label="Main navigation">
+            <button type="button" onclick="showSection('home-section')"><span aria-hidden="true">✎</span> Practice</button>
+            <button type="button" class="studio-results-link" onclick="showSection('results-section')"><span aria-hidden="true">▥</span> Results</button>
+            <div id="history-link-container" style="display: none;">
+                <a href="#" id="view-history-link"><span aria-hidden="true">◷</span> History</a>
+            </div>
+        </nav>
         <p class="studio-note">Make room for what<br>you’re learning.</p>
     </aside>
     <main class="container" id="main-content">
@@ -121,10 +122,7 @@
                 
                 <button id="start-btn" class="btn btn-primary">Start Exam</button>
                 
-                <!-- Exam History Link (only shown when authenticated) -->
-                <div id="history-link-container" style="display: none; margin-top: 20px; text-align: center;">
-                    <a href="#" id="view-history-link" class="text-link">View My Exam History</a>
-                </div>
+
             </div>
         </section>
         
@@ -190,8 +188,10 @@
         <!-- Exam Section: Question display and answer selection -->
         <section id="exam-section" class="section">
             <div class="card">
+                <h2 class="practice-title">A little practice. A clearer picture.</h2>
                 <div id="question-header">
                     <span id="question-counter">Question 1 of 5</span>
+                    <progress id="question-progress" value="1" max="5" aria-label="Question progress"></progress>
                 </div>
                 
                 <div id="question-content">
@@ -199,6 +199,36 @@
                     
                     <div id="options-container">
                         <!-- Radio button options will be inserted here by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Inline confidence panel; existing confirmation handlers are preserved. -->
+                <div id="confidence-modal" class="modal" style="display: none;">
+                    <div class="modal-content" role="group" aria-labelledby="confidence-heading">
+                        <div class="modal-header">
+                            <p id="confidence-selected-answer">You selected: <strong></strong></p>
+                        </div>
+
+                        <div class="modal-body">
+                            <h3 id="confidence-heading">How likely is your answer to be correct?</h3>
+
+                            <div class="confidence-slider-container">
+                                <div class="confidence-slider-labels">
+                                    <span>0%</span>
+                                    <span>50%</span>
+                                    <span>100%</span>
+                                </div>
+                                <input type="range" id="confidence-slider" aria-labelledby="confidence-heading" min="0" max="100" step="5" value="50">
+                                <div class="confidence-slider-value">
+                                    <span id="confidence-value-display">50%</span>
+                                </div>
+                                <button id="confirm-confidence-btn" class="btn btn-primary">Confirm</button>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <p id="confidence-progress" class="text-muted"></p>
+                        </div>
                     </div>
                 </div>
 
@@ -231,39 +261,17 @@
             </div>
         </section>
     </main>
+    <aside class="session-sidebar" aria-label="Your session">
+        <h2>Your session</h2>
+        <ol class="session-steps">
+            <li><span>1</span> Answer</li>
+            <li><span>2</span> Estimate</li>
+            <li><span>3</span> Review</li>
+        </ol>
+        <p>Answer thoughtfully.<br>Estimate honestly.<br>Learn from the difference.</p>
+    </aside>
     </div>
 
-    <!-- Confidence Modal: Appears after each answer -->
-    <div id="confidence-modal" class="modal" style="display: none;">
-        <div class="modal-overlay"></div>
-        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="confidence-heading">
-            <div class="modal-header">
-                <p id="confidence-selected-answer">You selected: <strong></strong></p>
-            </div>
-            
-            <div class="modal-body">
-                <h3 id="confidence-heading">How likely is your answer to be correct?</h3>
-                
-                <div class="confidence-slider-container">
-                    <div class="confidence-slider-labels">
-                        <span>0%</span>
-                        <span>50%</span>
-                        <span>100%</span>
-                    </div>
-                    <input type="range" id="confidence-slider" aria-labelledby="confidence-heading" min="0" max="100" step="5" value="50">
-                    <div class="confidence-slider-value">
-                        <span id="confidence-value-display">50%</span>
-                    </div>
-                    <button id="confirm-confidence-btn" class="btn btn-primary">Confirm</button>
-                </div>
-            </div>
-            
-            <div class="modal-footer">
-                <p id="confidence-progress" class="text-muted"></p>
-            </div>
-        </div>
-    </div>
-
-    <script src="/app.js?v=3"></script>
+    <script src="/app.js?v=study-studio-2"></script>
 </body>
 </html>

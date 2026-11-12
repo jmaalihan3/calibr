@@ -13,8 +13,9 @@ Separate the question, answer choices, and primary action with consistent spacin
 Cognitive load theory supports reducing presentation demands unrelated to learning
 (Sweller, 1988). Coherence and signaling principles similarly support excluding
 extraneous material and highlighting essential information (Mayer & Moreno, 2003).
-The sidebar explains Answer / Estimate / Review; it is guidance, not navigation
-or a dynamic progress tracker. The existing question counter provides actual progress.
+The left sidebar provides Practice, Results, and History navigation. A separate
+right-hand guide explains Answer / Estimate / Review. The question counter and
+progress bar reflect the actual question position. Mobile navigation stays visible.
 
 2. Use readable typography and restrained color
 Use ivory #F7F5EF, forest green #174D3C, dark ink #24312D, and muted sage.
@@ -28,10 +29,11 @@ Keep the selected answer visible within the confidence dialog, with a direct
 question: "How likely is your answer to be correct?" Label its percentage slider.
 Spatial contiguity motivates placing related information together (Mayer &
 Moreno, 2003). Explicit judgments make monitoring visible (Nelson & Narens, 1990).
-The original concept proposed inline confidence entry. This implementation keeps
-the existing dialog, default value, slider increments, confirmation, and separate
-Next/Submit actions to honor the visual-only scope. Inline entry remains an
-untested future interaction proposal, not an implemented feature.
+Confidence entry is shown inline below the answer choices using the same existing
+controls and handlers. Slider defaults, increments, confirmation, and the separate
+Next/Submit actions are preserved. No answer, confidence, or scoring state logic
+changes. Spatial arrangement changes; a combined Confirm & Continue action is
+not introduced because it would change the existing assessment sequence.
 
 4. Collect confidence before revealing correctness
 Selection uses a radio indicator and border, without a correctness checkmark.
@@ -67,7 +69,7 @@ reduced-motion preferences. WCAG 2.2 requires at least 4.5:1 contrast for normal
 text (with specified exceptions) and generally 24 by 24 CSS pixel minimum targets
 or qualifying spacing/exceptions. Controls here aim for 44 pixels or more in
 height. These choices are implementation goals, not a claim of complete WCAG
-conformance. Existing authentication and confidence-dialog behavior are preserved.
+conformance. Existing authentication, confidence capture, and assessment actions are preserved.
 
 REFERENCES
 

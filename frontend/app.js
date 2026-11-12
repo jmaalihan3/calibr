@@ -180,6 +180,10 @@ function renderQuestion() {
     document.getElementById('question-counter').textContent = 
         `Question ${questionNumber} of ${totalQuestions}${unitInfo}`;
     
+    // Presentation only: reflect the existing question position.
+    document.getElementById('question-progress').max = totalQuestions;
+    document.getElementById('question-progress').value = questionNumber;
+
     // Update question text
     document.getElementById('question-text').innerHTML = question.question_text;
     
