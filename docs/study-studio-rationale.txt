@@ -1,0 +1,101 @@
+CALIBR: STUDY STUDIO — INTERFACE RATIONALE
+Prepared 12 November 2026
+
+Scope
+Study Studio gives Calibr a quiet academic workspace: warm paper surfaces,
+forest-green controls, readable questions, and clear confidence estimation.
+Research supports the principles below, not a claim that this exact visual
+composition or palette has been experimentally shown to improve learning.
+
+1. Make the question the visual priority
+Use a spacious central reading area and restrained supporting information.
+Separate the question, answer choices, and primary action with consistent spacing.
+Cognitive load theory supports reducing presentation demands unrelated to learning
+(Sweller, 1988). Coherence and signaling principles similarly support excluding
+extraneous material and highlighting essential information (Mayer & Moreno, 2003).
+The sidebar explains Answer / Estimate / Review; it is guidance, not navigation
+or a dynamic progress tracker. The existing question counter provides actual progress.
+
+2. Use readable typography and restrained color
+Use ivory #F7F5EF, forest green #174D3C, dark ink #24312D, and muted sage.
+Use serif headings for identity and familiar sans-serif text for controls and
+answer options. Legibility depends on type size and font characteristics
+(Legge & Bigelow, 2011). Ivory and green are aesthetic choices, not proven
+learning interventions. Validate actual text and control contrast against WCAG.
+
+3. Preserve the answer context during confidence estimation
+Keep the selected answer visible within the confidence dialog, with a direct
+question: "How likely is your answer to be correct?" Label its percentage slider.
+Spatial contiguity motivates placing related information together (Mayer &
+Moreno, 2003). Explicit judgments make monitoring visible (Nelson & Narens, 1990).
+The original concept proposed inline confidence entry. This implementation keeps
+the existing dialog, default value, slider increments, confirmation, and separate
+Next/Submit actions to honor the visual-only scope. Inline entry remains an
+untested future interaction proposal, not an implemented feature.
+
+4. Collect confidence before revealing correctness
+Selection uses a radio indicator and border, without a correctness checkmark.
+The existing app still collects confidence before results. Calibration relates
+judgments to performance; revealing the result first would alter the information
+available for that judgment (Nelson & Narens, 1990).
+
+5. Show orientation without adding pressure
+Retain the actual question counter and make the existing action buttons easy to
+find. Do not introduce countdowns, rewards, or extra assessment steps.
+Reducing unnecessary processing is consistent with cognitive load theory
+(Sweller, 1988). Anxiety can compete for attentional resources (Eysenck et al.,
+2007); that finding motivates avoiding unnecessary pressure, but does not prove
+that a particular progress indicator improves performance.
+
+6. Make existing feedback readable and actionable
+Carry the same typography, surfaces, and visual hierarchy into results, answer
+review, calibration comparisons, and history. Preserve all existing calculations,
+labels, classifications, explanations, and chart datasets. Feedback is most
+useful when it clarifies performance and helps learners improve (Hattie &
+Timperley, 2007). The redesign improves presentation; it adds no new feedback engine.
+
+7. Support reflection without adding workflow
+The static sidebar encourages Answer / Estimate / Review. Existing explanations
+and another-exam actions provide opportunities for reflection and further practice.
+Self-regulated learning links performance monitoring, reflection, and planning
+(Zimmerman, 2002). A saved reflection prompt is a future proposal, not part of this
+visual-only implementation.
+
+Accessibility and responsive behavior
+Use visible keyboard focus, generously sized controls, responsive stacking, and
+reduced-motion preferences. WCAG 2.2 requires at least 4.5:1 contrast for normal
+text (with specified exceptions) and generally 24 by 24 CSS pixel minimum targets
+or qualifying spacing/exceptions. Controls here aim for 44 pixels or more in
+height. These choices are implementation goals, not a claim of complete WCAG
+conformance. Existing authentication and confidence-dialog behavior are preserved.
+
+REFERENCES
+
+Eysenck, M. W., Derakshan, N., Santos, R., & Calvo, M. G. (2007).
+Anxiety and cognitive performance: Attentional control theory.
+Emotion, 7(2), 336–353. https://doi.org/10.1037/1528-3542.7.2.336
+
+Hattie, J., & Timperley, H. (2007). The power of feedback.
+Review of Educational Research, 77(1), 81–112.
+https://doi.org/10.3102/003465430298487
+
+Legge, G. E., & Bigelow, C. A. (2011). Does print size matter for reading?
+A review of findings from vision science and typography.
+Journal of Vision, 11(5), 8. https://doi.org/10.1167/11.5.8
+
+Mayer, R. E., & Moreno, R. (2003). Nine ways to reduce cognitive load in
+multimedia learning. Educational Psychologist, 38(1), 43–52.
+https://doi.org/10.1207/S15326985EP3801_6
+
+Nelson, T. O., & Narens, L. (1990). Metamemory: A theoretical framework
+and new findings. Psychology of Learning and Motivation, 26, 125–173.
+https://doi.org/10.1016/S0079-7421(08)60053-5
+
+Sweller, J. (1988). Cognitive load during problem solving: Effects on learning.
+Cognitive Science, 12(2), 257–285. https://doi.org/10.1207/s15516709cog1202_4
+
+Zimmerman, B. J. (2002). Becoming a self-regulated learner: An overview.
+Theory Into Practice, 41(2), 64–70. https://doi.org/10.1207/s15430421tip4102_2
+
+World Wide Web Consortium (2023). Web Content Accessibility Guidelines
+(WCAG) 2.2. https://www.w3.org/TR/WCAG22/

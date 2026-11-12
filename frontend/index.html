@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Academic Assessment</title>
+    <title>Calibr | Study Studio</title>
     <link rel="stylesheet" href="/styles.css">
     <script>
         MathJax = {
@@ -22,10 +22,21 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
 </head>
 <body>
-    <div class="container">
+    <div class="studio-layout">
+    <aside class="studio-sidebar" aria-label="About Study Studio">
+        <div class="studio-brand">Calibr<span>STUDY STUDIO</span></div>
+        <p class="studio-motto">A little practice.<br>A clearer picture.</p>
+        <ol class="studio-steps" aria-label="How practice works">
+            <li><span>01</span><div>Answer<small>Take your time.</small></div></li>
+            <li><span>02</span><div>Estimate<small>Notice how certain you feel.</small></div></li>
+            <li><span>03</span><div>Review<small>Learn from the difference.</small></div></li>
+        </ol>
+        <p class="studio-note">Make room for what<br>you’re learning.</p>
+    </aside>
+    <main class="container" id="main-content">
         <header>
             <div class="header-content">
-                <h1>Academic Assessment System</h1>
+                <div><p class="eyebrow">YOUR LEARNING WORKSPACE</p><h1>Study Studio</h1></div>
                 <div id="auth-status" class="auth-status">
                     <!-- Auth status will be inserted here by JavaScript -->
                 </div>
@@ -93,12 +104,13 @@
         <!-- Home Section: Landing page with start button -->
         <section id="home-section" class="section active">
             <div class="card">
-                <h2>Welcome to the Assessment</h2>
-                <p>Test your knowledge with a randomly generated exam.</p>
+                <p class="eyebrow">A MOMENT TO PRACTICE</p>
+                <h2>A little practice. A clearer picture.</h2>
+                <p>Answer a few questions, estimate your confidence, and discover what to work on next.</p>
                 
                 <div style="margin: 20px 0;">
                     <label for="num-questions" style="display: block; margin-bottom: 8px; font-weight: 500;">Number of questions:</label>
-                    <select id="num-questions" style="padding: 8px 12px; font-size: 1rem; border: 1px solid #3a3a3a; border-radius: 4px; background: #2a2a2a; color: #e0e0e0; cursor: pointer;">
+                    <select id="num-questions" style="padding: 8px 12px; font-size: 1rem; border: 1px solid #b7bdb0; border-radius: 4px; background: #fffdf8; color: #24312d; cursor: pointer;">
                         <option value="1">1 question</option>
                         <option value="2">2 questions</option>
                         <option value="3">3 questions</option>
@@ -218,18 +230,19 @@
                 </div>
             </div>
         </section>
+    </main>
     </div>
 
     <!-- Confidence Modal: Appears after each answer -->
     <div id="confidence-modal" class="modal" style="display: none;">
         <div class="modal-overlay"></div>
-        <div class="modal-content">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="confidence-heading">
             <div class="modal-header">
                 <p id="confidence-selected-answer">You selected: <strong></strong></p>
             </div>
             
             <div class="modal-body">
-                <h3>How confident are you in your answer?</h3>
+                <h3 id="confidence-heading">How likely is your answer to be correct?</h3>
                 
                 <div class="confidence-slider-container">
                     <div class="confidence-slider-labels">
@@ -237,7 +250,7 @@
                         <span>50%</span>
                         <span>100%</span>
                     </div>
-                    <input type="range" id="confidence-slider" min="0" max="100" step="5" value="50">
+                    <input type="range" id="confidence-slider" aria-labelledby="confidence-heading" min="0" max="100" step="5" value="50">
                     <div class="confidence-slider-value">
                         <span id="confidence-value-display">50%</span>
                     </div>

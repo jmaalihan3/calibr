@@ -518,3 +518,49 @@ The changes maintain backward compatibility (NULL units acceptable) while provid
 **Impact**: Users can now see performance breakdown by topic (e.g., "I got 100% on Sampling Distributions but only 50% on Hypothesis Testing"). This supports targeted study and better learning outcomes.
 
 **Future Enhancement**: Could add unit-specific analytics, unit filtering in exam generation, or unit-based progress tracking over multiple exams.
+
+## 2026-11-12 — Study Studio visual redesign
+
+Replaced the charcoal-and-blue presentation with a warm ivory, forest-green,
+and sage interface. Added Calibr branding, a desktop guidance sidebar explaining
+Answer / Estimate / Review, editorial headings, a wider reading workspace,
+spacious answer rows, refined form controls, and consistent surfaces throughout
+login, registration, assessment, confidence entry, results, and history.
+The sidebar is explanatory content rather than new navigation or progress state.
+On small screens it becomes a compact brand header; content and actions stack.
+Added visible keyboard-focus styles, reduced-motion styling, dialog labeling,
+and an accessible name for the existing confidence slider.
+
+Scope and preservation:
+- Backend, database, API requests, authentication, scoring, question selection,
+  confidence defaults/increments, and assessment state remain unchanged.
+- JavaScript edits are exclusively hexadecimal presentation colors, including
+  dynamically rendered results and chart labels. A normalized source comparison
+  confirmed no other JavaScript changes. All original HTML IDs remain present.
+- Retained the existing confidence modal and separate Confirm / Next / Submit
+  actions. The concept's inline confidence entry was intentionally not introduced
+  because this task explicitly requires preserving the underlying app behavior.
+- No new navigation handlers, reflection storage, metrics, timers, or features.
+
+Documentation:
+Added docs/study-studio-rationale.txt with implementation-specific explanations,
+academic citations and DOI links, accessibility references, and distinctions
+between research-supported principles and aesthetic/usability hypotheses.
+
+Verification:
+- node --check frontend/app.js and git diff --check passed.
+- pytest tests -q: 80 passed, 2 failed. Both failures are existing database seed
+  expectations (10 sample questions expected, 20 StatCal questions loaded).
+  Reproduced both against an unmodified archive of the source branch.
+- Chromium smoke check exercised registration, login, question selection,
+  confidence rating/confirmation, submission, results, and authenticated history.
+- Inspected desktop screenshots and checked all six screens at 375 CSS pixels
+  without horizontal document overflow.
+- External CDN assets were served through the environment's HTTP client during
+  browser verification. Direct browser access did not initialize MathJax reliably;
+  no dependency-loading or application logic was changed to address that issue.
+- Existing Back to Home from history can retain a disabled Start button after
+  an assessment; left unchanged under the visual-only scope. The existing
+  Take Another Exam action resets the button; reload also restores it.
+- Completed two assessments and verified that both performance and calibration
+  history charts render and toggle. Final browser run reported no page errors.

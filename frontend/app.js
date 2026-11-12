@@ -417,7 +417,7 @@ function renderResults(data) {
                 <div class="comparison-bar-container">
                     <div class="comparison-label">
                         <span class="comparison-label-text">Average Confidence</span>
-                        <span class="comparison-label-value" style="color: #4a9eff;">${avgConfidence.toFixed(1)}%</span>
+                        <span class="comparison-label-value" style="color: #174d3c;">${avgConfidence.toFixed(1)}%</span>
                     </div>
                     <div class="comparison-bar-background">
                         <div class="comparison-bar-fill comparison-bar-confidence" style="width: ${avgConfidence}%;"></div>
@@ -427,7 +427,7 @@ function renderResults(data) {
                 <div class="comparison-bar-container">
                     <div class="comparison-label">
                         <span class="comparison-label-text">Actual Accuracy</span>
-                        <span class="comparison-label-value" style="color: #28a745;">${accuracy.toFixed(1)}%</span>
+                        <span class="comparison-label-value" style="color: #236443;">${accuracy.toFixed(1)}%</span>
                     </div>
                     <div class="comparison-bar-background">
                         <div class="comparison-bar-fill comparison-bar-accuracy" style="width: ${accuracy}%;"></div>
@@ -455,8 +455,8 @@ function renderResults(data) {
     if (data.average_confidence !== null && data.average_confidence !== undefined) {
         averageConfidenceHTML = `
             <div style="margin-bottom: 20px;">
-                <div style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">Average Confidence</div>
-                <div style="font-size: 2rem; font-weight: bold; color: #4a9eff;">${data.average_confidence.toFixed(1)}%</div>
+                <div style="font-size: 0.9rem; color: #58665b; margin-bottom: 5px;">Average Confidence</div>
+                <div style="font-size: 2rem; font-weight: bold; color: #174d3c;">${data.average_confidence.toFixed(1)}%</div>
             </div>
         `;
     }
@@ -469,22 +469,22 @@ function renderResults(data) {
         let calibrationColor = '';
         if (data.brier_score <= 0.20) {
             calibrationLabel = 'Excellent calibration ✓';
-            calibrationColor = '#28a745';
+            calibrationColor = '#236443';
         } else if (data.brier_score <= 0.40) {
             calibrationLabel = 'Good calibration ✓';
-            calibrationColor = '#4a9eff';
+            calibrationColor = '#174d3c';
         } else if (data.brier_score <= 0.60) {
             calibrationLabel = 'Poor calibration';
-            calibrationColor = '#ff9800';
+            calibrationColor = '#895219';
         } else {
             calibrationLabel = 'Very poor calibration';
-            calibrationColor = '#ff4444';
+            calibrationColor = '#a52b2b';
         }
         
         brierScoreHTML = `
             <div style="margin-bottom: 20px;">
-                <div style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">Brier Score</div>
-                <div style="font-size: 2rem; font-weight: bold; color: #4a9eff;">${data.brier_score.toFixed(3)}</div>
+                <div style="font-size: 0.9rem; color: #58665b; margin-bottom: 5px;">Brier Score</div>
+                <div style="font-size: 2rem; font-weight: bold; color: #174d3c;">${data.brier_score.toFixed(3)}</div>
                 <div style="font-size: 1rem; color: ${calibrationColor}; margin-top: 5px;">${calibrationLabel}</div>
             </div>
         `;
@@ -501,26 +501,26 @@ function renderResults(data) {
         
         if (Math.abs(data.bias_score) <= 0.10) {
             biasLabel = 'Well-calibrated ✓';
-            biasColor = '#28a745';
+            biasColor = '#236443';
             biasIcon = '⚖️';
             biasExplanation = 'Your confidence matches your performance';
         } else if (data.bias_score > 0.10) {
             if (data.bias_score <= 0.30) {
                 biasLabel = 'Slightly overconfident';
-                biasColor = '#ff9800';
+                biasColor = '#895219';
             } else {
                 biasLabel = 'Overconfident';
-                biasColor = '#ff4444';
+                biasColor = '#a52b2b';
             }
             biasIcon = '📈';
             biasExplanation = 'You tend to be confident even when incorrect';
         } else {  // bias_score < -0.10
             if (data.bias_score >= -0.30) {
                 biasLabel = 'Slightly underconfident';
-                biasColor = '#4a9eff';
+                biasColor = '#174d3c';
             } else {
                 biasLabel = 'Underconfident';
-                biasColor = '#888';
+                biasColor = '#58665b';
             }
             biasIcon = '📉';
             biasExplanation = 'You tend to lack confidence even when correct';
@@ -528,16 +528,16 @@ function renderResults(data) {
         
         biasScoreHTML = `
             <div>
-                <div style="font-size: 0.9rem; color: #888; margin-bottom: 5px;">
+                <div style="font-size: 0.9rem; color: #58665b; margin-bottom: 5px;">
                     ${biasIcon} Bias Score
                 </div>
-                <div style="font-size: 2rem; font-weight: bold; color: #4a9eff;">
+                <div style="font-size: 2rem; font-weight: bold; color: #174d3c;">
                     ${data.bias_score >= 0 ? '+' : ''}${data.bias_score.toFixed(3)}
                 </div>
                 <div style="font-size: 1rem; color: ${biasColor}; margin-top: 5px;">
                     ${biasLabel}
                 </div>
-                <div style="font-size: 0.85rem; color: #666; margin-top: 10px;">
+                <div style="font-size: 0.85rem; color: #526055; margin-top: 10px;">
                     ${biasExplanation}
                 </div>
             </div>
@@ -547,8 +547,8 @@ function renderResults(data) {
     // Combine all under Calibration header if any exist
     if (averageConfidenceHTML || brierScoreHTML || biasScoreHTML) {
         calibrationSectionHTML = `
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #3a3a3a;">
-                <h3 style="font-size: 1.2rem; color: #e0e0e0; margin-bottom: 15px;">Calibration</h3>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #b7bdb0;">
+                <h3 style="font-size: 1.2rem; color: #24312d; margin-bottom: 15px;">Calibration</h3>
                 ${averageConfidenceHTML}
                 ${brierScoreHTML}
                 ${biasScoreHTML}
@@ -558,7 +558,7 @@ function renderResults(data) {
     
     scoreSummary.innerHTML = `
         <div>
-            <h3 style="font-size: 1.2rem; color: #e0e0e0; margin-bottom: 15px;">Accuracy</h3>
+            <h3 style="font-size: 1.2rem; color: #24312d; margin-bottom: 15px;">Accuracy</h3>
             <div class="score">${data.score} / ${data.total}</div>
             <div class="percentage">${data.percentage}%</div>
         </div>
@@ -636,13 +636,13 @@ function renderResults(data) {
             }
             
             unitComparisonHTML = `
-                <div class="calibration-comparison" style="margin: 0; border-radius: 0; border-bottom: 1px solid #444;">
-                    <h4 style="font-size: 1rem; color: #e0e0e0; margin-bottom: 15px; font-weight: 600;">Confidence vs. Performance</h4>
+                <div class="calibration-comparison" style="margin: 0; border-radius: 0; border-bottom: 1px solid #a5ae9f;">
+                    <h4 style="font-size: 1rem; color: #24312d; margin-bottom: 15px; font-weight: 600;">Confidence vs. Performance</h4>
                     
                     <div class="comparison-bar-container">
                         <div class="comparison-label">
                             <span class="comparison-label-text">Average Confidence</span>
-                            <span class="comparison-label-value" style="color: #4a9eff;">${unitAvgConfidence.toFixed(1)}%</span>
+                            <span class="comparison-label-value" style="color: #174d3c;">${unitAvgConfidence.toFixed(1)}%</span>
                         </div>
                         <div class="comparison-bar-background">
                             <div class="comparison-bar-fill comparison-bar-confidence" style="width: ${unitAvgConfidence}%;"></div>
@@ -652,7 +652,7 @@ function renderResults(data) {
                     <div class="comparison-bar-container">
                         <div class="comparison-label">
                             <span class="comparison-label-text">Actual Accuracy</span>
-                            <span class="comparison-label-value" style="color: #28a745;">${unitAccuracy.toFixed(1)}%</span>
+                            <span class="comparison-label-value" style="color: #236443;">${unitAccuracy.toFixed(1)}%</span>
                         </div>
                         <div class="comparison-bar-background">
                             <div class="comparison-bar-fill comparison-bar-accuracy" style="width: ${unitAccuracy}%;"></div>
@@ -697,15 +697,15 @@ function renderResults(data) {
             
             // Confidence display
             let confidenceText = 'N/A';
-            let confidenceColor = '#888';
+            let confidenceColor = '#58665b';
             if (result.confidence !== null && result.confidence !== undefined) {
                 confidenceText = `${result.confidence}%`;
                 if (result.confidence >= 70) {
-                    confidenceColor = '#28a745';
+                    confidenceColor = '#236443';
                 } else if (result.confidence >= 40) {
-                    confidenceColor = '#4a9eff';
+                    confidenceColor = '#174d3c';
                 } else {
-                    confidenceColor = '#ff9800';
+                    confidenceColor = '#895219';
                 }
             }
             
@@ -1272,7 +1272,7 @@ async function loadStatistics() {
             
             if (stats.total_exams === 0) {
                 summaryDiv.innerHTML = `
-                    <div style="grid-column: 1 / -1; text-align: center; color: #888;">
+                    <div style="grid-column: 1 / -1; text-align: center; color: #58665b;">
                         No completed exams yet. Take an exam to see your statistics!
                     </div>
                 `;
@@ -1297,11 +1297,11 @@ async function loadStatistics() {
                 `;
             }
         } else {
-            summaryDiv.innerHTML = '<div style="color: #ff4444;">Failed to load statistics</div>';
+            summaryDiv.innerHTML = '<div style="color: #a52b2b;">Failed to load statistics</div>';
         }
     } catch (error) {
         console.error('Error loading statistics:', error);
-        summaryDiv.innerHTML = '<div style="color: #ff4444;">Error loading statistics</div>';
+        summaryDiv.innerHTML = '<div style="color: #a52b2b;">Error loading statistics</div>';
     }
 }
 
@@ -1331,11 +1331,11 @@ async function loadExamHistory() {
                 historyList.innerHTML = data.exams.map(exam => renderHistoryItem(exam)).join('');
             }
         } else {
-            historyList.innerHTML = '<div style="color: #ff4444;">Failed to load exam history</div>';
+            historyList.innerHTML = '<div style="color: #a52b2b;">Failed to load exam history</div>';
         }
     } catch (error) {
         console.error('Error loading exam history:', error);
-        historyList.innerHTML = '<div style="color: #ff4444;">Error loading exam history</div>';
+        historyList.innerHTML = '<div style="color: #a52b2b;">Error loading exam history</div>';
     }
 }
 
@@ -1499,7 +1499,7 @@ function renderPerformanceChart(trends) {
                 {
                     label: 'Answer Accuracy (%)',
                     data: accuracy,
-                    borderColor: '#28a745',
+                    borderColor: '#236443',
                     backgroundColor: 'rgba(40, 167, 69, 0.1)',
                     borderWidth: 2,
                     tension: 0.3,
@@ -1508,7 +1508,7 @@ function renderPerformanceChart(trends) {
                 {
                     label: 'Average Confidence (%)',
                     data: confidence,
-                    borderColor: '#4a9eff',
+                    borderColor: '#174d3c',
                     backgroundColor: 'rgba(74, 158, 255, 0.1)',
                     borderWidth: 2,
                     tension: 0.3,
@@ -1524,7 +1524,7 @@ function renderPerformanceChart(trends) {
                     display: true,
                     position: 'top',
                     labels: {
-                        color: '#e0e0e0',
+                        color: '#24312d',
                         padding: 15,
                         font: {
                             size: 12
@@ -1534,7 +1534,7 @@ function renderPerformanceChart(trends) {
                 title: {
                     display: true,
                     text: 'Performance Over Time',
-                    color: '#e0e0e0',
+                    color: '#24312d',
                     font: {
                         size: 16,
                         weight: 'bold'
@@ -1547,7 +1547,7 @@ function renderPerformanceChart(trends) {
                     backgroundColor: 'rgba(0, 0, 0, 0.8)',
                     titleColor: '#fff',
                     bodyColor: '#fff',
-                    borderColor: '#3a3a3a',
+                    borderColor: '#b7bdb0',
                     borderWidth: 1,
                     padding: 12,
                     displayColors: true
@@ -1556,20 +1556,20 @@ function renderPerformanceChart(trends) {
             scales: {
                 x: {
                     grid: {
-                        color: '#3a3a3a'
+                        color: '#b7bdb0'
                     },
                     ticks: {
-                        color: '#b0b0b0'
+                        color: '#526055'
                     }
                 },
                 y: {
                     min: 0,
                     max: 100,
                     grid: {
-                        color: '#3a3a3a'
+                        color: '#b7bdb0'
                     },
                     ticks: {
-                        color: '#b0b0b0',
+                        color: '#526055',
                         callback: function(value) {
                             return value + '%';
                         }
@@ -1577,7 +1577,7 @@ function renderPerformanceChart(trends) {
                     title: {
                         display: true,
                         text: 'Percentage (%)',
-                        color: '#b0b0b0'
+                        color: '#526055'
                     }
                 }
             }
@@ -1612,7 +1612,7 @@ function renderCalibrationChart(trends) {
                 {
                     label: 'Brier Score',
                     data: brierScores,
-                    borderColor: '#ff9800',
+                    borderColor: '#895219',
                     backgroundColor: 'rgba(255, 152, 0, 0.1)',
                     borderWidth: 2,
                     tension: 0.3,
@@ -1622,7 +1622,7 @@ function renderCalibrationChart(trends) {
                 {
                     label: 'Calibration Bias',
                     data: biasScores,
-                    borderColor: '#9c27b0',
+                    borderColor: '#754b86',
                     backgroundColor: 'rgba(156, 39, 176, 0.1)',
                     borderWidth: 2,
                     tension: 0.3,
@@ -1643,7 +1643,7 @@ function renderCalibrationChart(trends) {
                     display: true,
                     position: 'top',
                     labels: {
-                        color: '#e0e0e0',
+                        color: '#24312d',
                         padding: 15,
                         font: {
                             size: 12
@@ -1653,7 +1653,7 @@ function renderCalibrationChart(trends) {
                 title: {
                     display: true,
                     text: 'Calibration Over Time',
-                    color: '#e0e0e0',
+                    color: '#24312d',
                     font: {
                         size: 16,
                         weight: 'bold'
@@ -1666,7 +1666,7 @@ function renderCalibrationChart(trends) {
                     backgroundColor: 'rgba(0, 0, 0, 0.8)',
                     titleColor: '#fff',
                     bodyColor: '#fff',
-                    borderColor: '#3a3a3a',
+                    borderColor: '#b7bdb0',
                     borderWidth: 1,
                     padding: 12,
                     displayColors: true,
@@ -1687,10 +1687,10 @@ function renderCalibrationChart(trends) {
             scales: {
                 x: {
                     grid: {
-                        color: '#3a3a3a'
+                        color: '#b7bdb0'
                     },
                     ticks: {
-                        color: '#b0b0b0'
+                        color: '#526055'
                     }
                 },
                 'y-brier': {
@@ -1699,10 +1699,10 @@ function renderCalibrationChart(trends) {
                     min: 0,
                     max: 0.5,
                     grid: {
-                        color: '#3a3a3a'
+                        color: '#b7bdb0'
                     },
                     ticks: {
-                        color: '#ff9800',
+                        color: '#895219',
                         callback: function(value) {
                             return value.toFixed(2);
                         }
@@ -1710,7 +1710,7 @@ function renderCalibrationChart(trends) {
                     title: {
                         display: true,
                         text: 'Brier Score',
-                        color: '#ff9800'
+                        color: '#895219'
                     }
                 },
                 'y-bias': {
@@ -1722,7 +1722,7 @@ function renderCalibrationChart(trends) {
                         drawOnChartArea: false
                     },
                     ticks: {
-                        color: '#9c27b0',
+                        color: '#754b86',
                         callback: function(value) {
                             return value.toFixed(2);
                         }
@@ -1730,7 +1730,7 @@ function renderCalibrationChart(trends) {
                     title: {
                         display: true,
                         text: 'Calibration Bias',
-                        color: '#9c27b0'
+                        color: '#754b86'
                     }
                 }
             }
